@@ -11,15 +11,15 @@ namespace PriceIt.Core.Services
 {
     public class WebScraping : IWebScraping
     {
-        private readonly string BaseUrl_Amazon = "https://www.amazon.de/s?i=specialty-aps&rh=n%3A21617877031&fs=true&language=en&ref=lp_21617877031_sar";
+        private readonly string BaseUrl_Amazon = "https://www.amazon.de/s?bbn=340843031&rh=n%3A17453196031&brr=1&rd=1&ref=Oct_s9_apbd_odnav_hd_bw_bSxeud_0";
 
         public async Task<List<Product>> GetAmazonProducts()
         {
             var products = new List<Product>();
 
-            var website = new HtmlWeb {AutoDetectEncoding = false, OverrideEncoding = Encoding.Default};
+            var website = new HtmlWeb {AutoDetectEncoding = false, OverrideEncoding = Encoding.Default,UseCookies = true};
             var doc = await website.LoadFromWebAsync(BaseUrl_Amazon);
-            
+
             var links = doc.DocumentNode.Descendants("a").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("a-link-normal a-text-normal"));
 
             foreach (var link in links)
