@@ -6,21 +6,26 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using PriceIt.Core.Interfaces;
 
 namespace PriceIt.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IWebScraping _webScrapingService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IWebScraping webScrapingService)
         {
             _logger = logger;
+            _webScrapingService = webScrapingService;
         }
 
-        public IActionResult Index()
+        public async Task<ActionResult> Index()
         {
-            return View();
+            var products = await _webScrapingService.GetAmazonProducts();
+
+            return View(products);
         }
 
         public IActionResult Privacy()
