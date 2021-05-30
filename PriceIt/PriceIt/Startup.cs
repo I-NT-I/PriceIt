@@ -29,6 +29,8 @@ namespace PriceIt
 
             services.AddSingleton<IWebScraping, WebScraping>();
 
+            services.AddSingleton<IHttpCallManager, HttpCallManager>();
+
             services.AddMvc();
         }
 

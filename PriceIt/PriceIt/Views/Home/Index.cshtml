@@ -1,5 +1,4 @@
-﻿@model List<PriceIt.Core.Models.Product>
-
+﻿@using PriceIt.Core.Models
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -7,9 +6,19 @@
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-    
-    @foreach (var p in Model)
-    {
-        <a href="@p.ProductUrl">@p.Name</a>
+
+    @{
+        if (ViewData["test"] is List<Product> products)
+        {
+            <div>
+                @foreach (var product in products)
+                {
+                    <a href="@product.ProductUrl">
+                        <h5>@product.Name</h5>
+                    </a>
+                    <p>price : @product.Price</p>
+                }
+            </div>
+        }
     }
 </div>
