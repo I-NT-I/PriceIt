@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -55,9 +56,11 @@ namespace PriceIt.Core.Services
                 {
                     // ignored
                     //should log
+                    Debug.WriteLine("page exception");
                 }
 
                 results.Add(doc);
+                Debug.WriteLine("page added");
             }
 
             return results;

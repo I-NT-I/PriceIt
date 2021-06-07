@@ -31,6 +31,8 @@ namespace PriceIt
 
             services.AddSingleton<IHttpCallManager, HttpCallManager>();
 
+            services.AddSingleton<ICSVStore,CSVStore>();
+
             services.AddMvc();
         }
 

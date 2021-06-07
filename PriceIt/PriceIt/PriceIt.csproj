@@ -8,4 +8,8 @@
     <ProjectReference Include="..\PriceIt.Core\PriceIt.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\csvs\" />
+  </ItemGroup>
+
 </Project>

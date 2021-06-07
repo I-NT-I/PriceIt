@@ -10,6 +10,7 @@ namespace PriceIt.Core.Models
         public float Price { get; set; }
         public string ProductUrl { get; set; }
         public Website Website { get; set; }
+        public string Image { get; set; }
     }
 
     public enum Website
