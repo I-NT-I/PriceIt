@@ -115,11 +115,9 @@ namespace PriceIt.Core.Services
 
                 try
                 {
-                    var imageBlockParent =
+                    var imageBlock =
                         element.FindElement(
                             By.XPath(".//div[@class='ProductImage__StyledPictureWrapper-sc-11s4esr-0 dYgeHb']"));
-
-                    var imageBlock = imageBlockParent.FindElement(By.TagName("div"));
 
                     image = imageBlock.FindElement(By.TagName("img")).GetAttribute("src");
                 }
@@ -273,6 +271,109 @@ namespace PriceIt.Core.Services
             //        products = new List<Product>();
             //    }
             //}
+
+            return products;
+        }
+
+        public async Task<List<Product>> GetSaturnProducts()
+        {
+
+            IWebDriver driver = new ChromeDriver(@"D:\WorkSpace\Git\PriceIt\PriceIt\PriceIt.Core\bin\Debug\netcoreapp3.1");
+            driver.Url = "https://www.saturn.de/de/search.html?query=computer%20netzteil&t=1623073505284&user_input=computer%20netzteil&query_from_suggest=true";
+
+            var wait = new WebDriverWait(driver, TimeSpan.FromMilliseconds(10000));
+
+            wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
+
+            Thread.Sleep(5000);
+
+            ReadOnlyCollection<IWebElement> elements = driver.FindElements(
+                By.XPath("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']"));
+
+            var step = elements[0].Size.Height;
+            Int64 last_height = (Int64)0;
+            Int64 max_height = (Int64)((IJavaScriptExecutor)driver).ExecuteScript("return document.documentElement.scrollHeight");
+            while (true)
+            {
+                ((IJavaScriptExecutor)driver).ExecuteScript("window.scrollTo(0, " + last_height + ");");
+                /* Wait to load page */
+                Thread.Sleep(2000);
+                /* Calculate new scroll height and compare with last scroll height */
+                var new_height = last_height + step;
+                if (new_height >= max_height)
+                    /* If heights are the same it will exit the function */
+                    break;
+                last_height = new_height;
+            }
+
+            var products = new List<Product>();
+
+            foreach (var element in elements)
+            {
+                var product = new Product();
+
+                var image = "";
+
+                try
+                {
+                    var imageBlock =
+                        element.FindElement(
+                            By.XPath(".//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']"));
+
+                    image = imageBlock.FindElement(By.TagName("img")).GetAttribute("src");
+                }
+                catch (Exception e)
+                {
+                    // ignored
+                }
+
+                product.Image = image;
+
+                var nameBlockParent =
+                    element.FindElement(
+                        By.XPath(".//div[@class='ProductHeader__StyledHeadingWrapper-cwyxax-0 fGyNfx']"));
+
+                var nameBlock = nameBlockParent.FindElement(By.TagName("p"));
+
+                var nameSpan = nameBlock.FindElement(By.TagName("span"));
+
+                var name = nameSpan.GetAttribute("innerText") + nameBlock.GetAttribute("innerText");
+
+                if (!string.IsNullOrEmpty(name))
+                {
+                    product.Name = name;
+                }
+
+                var priceBlockParent =
+                    element.FindElement(
+                        By.XPath(".//span[@aria-hidden='true']"));
+
+                var priceSpans = priceBlockParent.FindElements(By.CssSelector("*"));
+
+                if (priceSpans != null)
+                {
+                    var priceBlockEuro = priceSpans[0];
+
+                    var priceEuro = priceSpans[0].GetAttribute("innerText").Replace(".", "");
+
+                    var priceCent = priceSpans[1].GetAttribute("innerText");
+
+                    product.Price = float.Parse(priceEuro) + (float.Parse(priceCent) / 100);
+                }
+
+                var linkBLock = element.FindElement(By.XPath(".//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 dqwdXM ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']"));
+
+                var link = linkBLock.GetAttribute("href");
+
+                if (!string.IsNullOrEmpty(link))
+                {
+                    product.ProductUrl = link;
+                }
+
+                product.Website = Website.MediaMarkt;
+
+                products.Add(product);
+            }
 
             return products;
         }

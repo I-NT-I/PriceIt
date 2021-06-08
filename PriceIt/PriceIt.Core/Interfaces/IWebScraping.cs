@@ -13,5 +13,6 @@ namespace PriceIt.Core.Interfaces
         Task<HtmlDocument> test();
         Task<HtmlDocument> HandelCaptcha(string amzn, string amznr, string captcha);
         Task<List<Product>> GetMediaMarktProducts();
+        Task<List<Product>> GetSaturnProducts();
     }
 }

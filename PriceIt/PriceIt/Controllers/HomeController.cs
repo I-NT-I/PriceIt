@@ -30,7 +30,7 @@ namespace PriceIt.Controllers
         {
             var products = await _webScrapingService.test();
 
-            ViewData["test"] = await _webScrapingService.GetMediaMarktProducts();
+            ViewData["test"] = await _webScrapingService.GetSaturnProducts();
             return View(products);
         }
 
