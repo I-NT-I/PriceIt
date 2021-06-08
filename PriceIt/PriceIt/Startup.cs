@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PriceIt.Core.Interfaces;
+using PriceIt.Core.Services;
 
 namespace PriceIt
 {
@@ -24,6 +26,14 @@ namespace PriceIt
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.AddSingleton<IWebScraping, WebScraping>();
+
+            services.AddSingleton<IHttpCallManager, HttpCallManager>();
+
+            services.AddSingleton<ICSVStore,CSVStore>();
+
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
