@@ -7,19 +7,22 @@
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 
-    @{
-        if (ViewData["test"] is List<Product> products)
-        {
-            <div>
-                @foreach (var product in products)
-                {
-                    <a href="@product.ProductUrl">
-                        <h5>@product.Name</h5>
-                        <img src="@product.Image" alt="@product.Name"/>
-                    </a>
-                    <p>price : @product.Price</p>
-                }
-            </div>
+    @*
+
+        @{
+            if (ViewData["test"] is List<Product> products)
+            {
+                <div>
+                    @foreach (var product in products)
+                    {
+                        <a href="@product.ProductUrl">
+                            <h5>@product.Name</h5>
+                            <img src="@product.Image" alt="@product.Name"/>
+                        </a>
+                        <p>price : @product.Price</p>
+                    }
+                </div>
+            }
         }
-    }
+    *@
 </div>

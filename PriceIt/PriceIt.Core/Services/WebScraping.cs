@@ -126,7 +126,7 @@ namespace PriceIt.Core.Services
                     // ignored
                 }
 
-                product.Image = image;
+                product.ProductImageUrl = image;
 
                 var nameBlockParent =
                     element.FindElement(
@@ -327,7 +327,7 @@ namespace PriceIt.Core.Services
                     // ignored
                 }
 
-                product.Image = image;
+                product.ProductImageUrl = image;
 
                 var nameBlockParent =
                     element.FindElement(

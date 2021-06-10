@@ -28,10 +28,11 @@ namespace PriceIt.Controllers
 
         public async Task<ActionResult> Index()
         {
-            var products = await _webScrapingService.test();
+            //var products = await _webScrapingService.test();
 
-            ViewData["test"] = await _webScrapingService.GetSaturnProducts();
-            return View(products);
+            //ViewData["test"] = await _webScrapingService.GetSaturnProducts();
+            //return View(products);
+            return View();
         }
 
         public async Task<ActionResult> Form()
