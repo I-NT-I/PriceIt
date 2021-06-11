@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
+using Microsoft.Playwright;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -32,42 +34,78 @@ namespace PriceIt.Core.Services
         {
             var products = new List<Product>();
 
-            var httpClient = new HttpClient();
+            using var playwright = await Playwright.CreateAsync();
+            var chromium = playwright.Chromium;
+            var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome" });
 
-            httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("PriceItDevTest_3");
+            var context = await browser.NewContextAsync();
+            var page = await context.NewPageAsync();
+            await page.GotoAsync("https://www.amazon.de/-/en/s?k=pc+netzteil&crid=VB0L1QCD2ESY&qid=1623326023&sprefix=pc+net%2Caps%2C174&ref=sr_pg_1");
 
-            var html = await httpClient.GetStringAsync(BaseUrl_Amazon);
+            var elements = await page.QuerySelectorAllAsync(
+                "//div[@class='s-include-content-margin s-border-bottom s-latency-cf-section']");
 
-            var htmlDocument = new HtmlDocument();
-            htmlDocument.LoadHtml(html);
-
-            var website = new HtmlWeb {AutoDetectEncoding = false, OverrideEncoding = Encoding.Default,UseCookies = true};
-            var doc = await website.LoadFromWebAsync(BaseUrl_Amazon);
-
-            var links = htmlDocument.DocumentNode.Descendants("a").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("a-link-normal a-text-normal"));
-
-            foreach (var link in links)
+            foreach (var element in elements)
             {
-                var url = "https://www.amazon.de/" + link.Attributes["href"].Value;
+                var product = new Product();
 
-                var name = "";
 
-                try
+                //Getting the name of the product
+                var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-medium a-color-base a-text-normal']");
+                if (nameBlock == null) continue;
+
+
+                var name = await nameBlock.TextContentAsync();
+                if (!string.IsNullOrEmpty(name))
                 {
-                    name = link.Descendants("span").Where(d =>
-                        d.Attributes.Contains("class") && d.Attributes["class"].Value
-                            .Contains("a-size-base-plus a-color-base a-text-normal")).ElementAt(0).InnerText;
+                    product.Name = name;
                 }
-                catch (Exception e)
+
+                //Getting the image of the product if found
+                var image = "";
+                var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-fixed-height']");
+                if (imageBlock != null)
                 {
-                    
+                    var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
+                    if (img != null)
+                    {
+                        image = await img.GetAttributeAsync("src");
+                    }
                 }
 
-                products.Add(new Product()
+                if (!string.IsNullOrEmpty(image))
                 {
-                    Name = name,
-                    ProductUrl = url
-                });
+                    product.Image = image;
+                }
+
+                //Getting the Url to the product details page
+                var url = "";
+                var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
+                if(urlBLock == null) continue;
+
+                url = await urlBLock.GetAttributeAsync("href");
+
+                if (!string.IsNullOrEmpty(url))
+                {
+                    product.ProductUrl = url;
+                }
+
+                //Getting the price of the product
+                var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
+                if(priceBlock == null) continue;
+
+                var priceValue = await priceBlock.TextContentAsync();
+
+                if (!string.IsNullOrEmpty(priceValue))
+                {
+                    var culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+                    culture.NumberFormat.NumberDecimalSeparator = ".";
+                    product.Price = float.Parse(priceValue,culture);
+                }
+
+                product.Website = Website.Amazon;
+
+                products.Add(product);
             }
 
             return products;
@@ -103,6 +141,8 @@ namespace PriceIt.Core.Services
                 last_height = new_height;
             }
 
+
+            driver.Close();
             //var test = _csvStore.ReadProducts();
 
             var products = new List<Product>();
