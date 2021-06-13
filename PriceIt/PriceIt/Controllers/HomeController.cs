@@ -28,7 +28,7 @@ namespace PriceIt.Controllers
 
         public async Task<ActionResult> Index()
         {
-            ViewData["test"] = await _webScrapingService.GetAmazonProducts();
+            ViewData["test"] = await _webScrapingService.GetMediaMarktProducts();
             return View();
         }
 

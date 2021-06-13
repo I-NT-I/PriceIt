@@ -19,9 +19,10 @@ namespace PriceIt.Core.Services
 {
     public class WebScraping : IWebScraping
     {
-        private readonly string BaseUrl_Amazon = "https://www.amazon.de/";
+        private const string BaseUrlAmazon = "https://www.amazon.de/";
+        private const string BaseUrlMediaMarkt = "https://www.mediamarkt.de";
 
-        private readonly int _pagesToScrap = 5;
+            private readonly int _pagesToScrap = 5;
 
         private readonly IHttpCallManager _callManager;
         private readonly ICSVStore _csvStore;
@@ -87,7 +88,7 @@ namespace PriceIt.Core.Services
 
                     if (string.IsNullOrEmpty(url)) continue;
 
-                    product.ProductUrl = BaseUrl_Amazon + url;
+                    product.ProductUrl = BaseUrlAmazon + url;
 
                     //Getting the price of the product
                     var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
@@ -96,8 +97,7 @@ namespace PriceIt.Core.Services
                     var priceValue = await priceBlock.TextContentAsync();
 
                     if (string.IsNullOrEmpty(priceValue)) continue;
-
-                    var culture = (CultureInfo) CultureInfo.CurrentCulture.Clone();
+                    
                     if (!float.TryParse(priceValue, out var result)) continue;
 
                     product.Price = result;
@@ -117,116 +117,123 @@ namespace PriceIt.Core.Services
                 Thread.Sleep(2500);
             }
 
+            await page.CloseAsync();
+
             return products;
         }
 
         public async Task<List<Product>> GetMediaMarktProducts()
         {
-            IWebDriver driver = new ChromeDriver(@"D:\WorkSpace\Git\PriceIt\PriceIt\PriceIt.Core\bin\Debug\netcoreapp3.1");
-            driver.Url = "https://www.mediamarkt.de/de/search.html?query=computer%20netzteil&t=1621809809259&user_input=computer%20ne&query_from_suggest=true";
-
-            var wait = new WebDriverWait(driver, TimeSpan.FromMilliseconds(10000));
-
-            wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
-
-            Thread.Sleep(5000);
-
-            ReadOnlyCollection<IWebElement> elements = driver.FindElements(
-                By.XPath("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']"));
-
-            var step = elements[0].Size.Height;
-            Int64 last_height = (Int64)0;
-            Int64 max_height = (Int64)((IJavaScriptExecutor)driver).ExecuteScript("return document.documentElement.scrollHeight");
-            while (true)
-            {
-                ((IJavaScriptExecutor)driver).ExecuteScript("window.scrollTo(0, "+last_height+");");
-                /* Wait to load page */
-                Thread.Sleep(2000);
-                /* Calculate new scroll height and compare with last scroll height */
-                var new_height = last_height + step;
-                if (new_height >= max_height)
-                    /* If heights are the same it will exit the function */
-                    break;
-                last_height = new_height;
-            }
-
-
-            driver.Close();
-            //var test = _csvStore.ReadProducts();
-
             var products = new List<Product>();
 
-            foreach (var element in elements)
+            using var playwright = await Playwright.CreateAsync();
+            var chromium = playwright.Chromium;
+            var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome", Headless = false });
+
+            var context = await browser.NewContextAsync();
+            var page = await context.NewPageAsync();
+
+            var pageNumber = 1;
+
+            await page.GotoAsync("https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page="+ pageNumber);
+
+            var loadMoreBlock = await page.QuerySelectorAsync("//button[@class='Buttonstyled__StyledButton-sc-140xkaw-1 kwAJfX ProductsListstyled__StyledButton-a3dwak-2 gNiSGg']");
+
+            while (loadMoreBlock != null && pageNumber <= _pagesToScrap)
             {
-                var product = new Product();
+                var elements = await page.QuerySelectorAllAsync("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']");
 
-                var image = "";
-
-                try
+                foreach (var element in elements)
                 {
-                    var imageBlock =
-                        element.FindElement(
-                            By.XPath(".//div[@class='ProductImage__StyledPictureWrapper-sc-11s4esr-0 dYgeHb']"));
+                    var product = new Product();
 
-                    image = imageBlock.FindElement(By.TagName("img")).GetAttribute("src");
-                }
-                catch (Exception e)
-                {
-                    // ignored
-                }
+                    await element.ScrollIntoViewIfNeededAsync();
 
-                product.Image = image;
+                    //Getting the name of the product
+                    var nameBlock = await element.QuerySelectorAsync("//p[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 fuXjPV']");
+                    if (nameBlock == null) continue;
 
-                var nameBlockParent =
-                    element.FindElement(
-                        By.XPath(".//div[@class='ProductHeader__StyledHeadingWrapper-cwyxax-0 fGyNfx']"));
+                    var spanNameBlock = await element.QuerySelectorAsync("//span[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 kPKTpQ']");
+                    if (spanNameBlock == null) continue;
 
-                var nameBlock = nameBlockParent.FindElement(By.TagName("p"));
+                    var name = await spanNameBlock.TextContentAsync() + await nameBlock.TextContentAsync();
+                    if (string.IsNullOrEmpty(name)) continue;
 
-                var nameSpan = nameBlock.FindElement(By.TagName("span"));
-
-                var name = nameSpan.GetAttribute("innerText") + nameBlock.GetAttribute("innerText");
-
-                if (!string.IsNullOrEmpty(name))
-                {
                     product.Name = name;
+
+                    //Getting the image of the product if found
+                    var image = "";
+                    var imageBlock = await element.QuerySelectorAsync("//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']");
+                    if (imageBlock != null)
+                    {
+                        var img = await imageBlock.QuerySelectorAsync("//img");
+                        if (img != null)
+                        {
+                            image = await img.GetAttributeAsync("src");
+                        }
+                    }
+
+                    product.Image = image;
+
+                    //Getting the Url to the product details page
+                    var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 iDDAGF ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");
+                    if (urlBLock == null) continue;
+
+                    var url = await urlBLock.GetAttributeAsync("href");
+
+                    if (string.IsNullOrEmpty(url)) continue;
+
+                    product.ProductUrl = BaseUrlMediaMarkt + url;
+
+                    //Getting the price of the product
+                    var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
+                    if (priceBlock == null) continue;
+
+                    var priceSpans = await priceBlock.QuerySelectorAllAsync("//*");
+
+                    if (!priceSpans.Any()) continue;
+
+                    var priceEuro = await priceSpans[0].TextContentAsync();
+                    if (priceEuro == null) continue;
+
+                    priceEuro = priceEuro.Replace(".", "");
+                    if (!float.TryParse(priceEuro, out var euroResult)) continue;
+
+                    switch (priceSpans.Count)
+                    {
+                        case 2:
+                            {
+                                var priceCent = await priceSpans[1].TextContentAsync();
+                                if (priceCent == null) continue;
+
+                                if (!float.TryParse(priceCent, out var centResult)) continue;
+
+                                product.Price = euroResult + (centResult / 100);
+                                break;
+                            }
+                        case 1:
+                            product.Price = euroResult;
+                            break;
+                        default: continue;
+                    }
+
+                    product.Category = Category.RAM;
+
+                    product.Website = Website.MediaMarkt;
+
+                    products.Add(product);
                 }
 
-                var priceBlockParent =
-                    element.FindElement(
-                        By.XPath(".//span[@aria-hidden='true']"));
+                pageNumber++;
 
-                var priceSpans = priceBlockParent.FindElements(By.CssSelector("*"));
+                await page.GotoAsync("https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page=" + pageNumber);
 
-                if (priceSpans != null)
-                {
-                    var priceBlockEuro = priceSpans[0];
+                loadMoreBlock = await page.QuerySelectorAsync("//button[@class='Buttonstyled__StyledButton-sc-140xkaw-1 kwAJfX ProductsListstyled__StyledButton-a3dwak-2 gNiSGg']");
 
-                    var priceEuro = priceSpans[0].GetAttribute("innerText").Replace(".", "");
-
-                    var priceCent = priceSpans[1].GetAttribute("innerText");
-
-                    product.Price = float.Parse(priceEuro) + (float.Parse(priceCent) / 100);
-                }
-
-                var linkBLock = element.FindElement(By.XPath(".//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 hihJjl ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']"));
-
-                var link = linkBLock.GetAttribute("href");
-
-                if (!string.IsNullOrEmpty(link))
-                {
-                    product.ProductUrl = link;
-                }
-
-                product.Website = Website.MediaMarkt;
-
-                products.Add(product);
+                Thread.Sleep(2500);
             }
 
-            var pageOne = await _callManager.CallWebsite("de/search.html?query=computer%20netzteil&t=1621809809259&user_input=computer%20ne&query_from_suggest=true", "https://www.mediamarkt.de/");
-            var objs = pageOne.DocumentNode.Descendants("div").Where(d =>
-                d.Attributes.Contains("class") && d.Attributes["class"].Value
-                    .Contains("ProductTilestyled__StyledCardWrapper-sc-1w38xrp-0 iQOLvF"));
+            await page.CloseAsync();
 
             return products;
         }
