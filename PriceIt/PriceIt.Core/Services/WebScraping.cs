@@ -19,7 +19,9 @@ namespace PriceIt.Core.Services
 {
     public class WebScraping : IWebScraping
     {
-        private readonly string BaseUrl_Amazon = "https://www.amazon.de/s?bbn=340843031&rh=n%3A17453196031&brr=1&rd=1&ref=Oct_s9_apbd_odnav_hd_bw_bSxeud_0";
+        private readonly string BaseUrl_Amazon = "https://www.amazon.de/";
+
+        private readonly int _pagesToScrap = 5;
 
         private readonly IHttpCallManager _callManager;
         private readonly ICSVStore _csvStore;
@@ -36,76 +38,83 @@ namespace PriceIt.Core.Services
 
             using var playwright = await Playwright.CreateAsync();
             var chromium = playwright.Chromium;
-            var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome" });
+            var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome" ,Headless = false});
 
             var context = await browser.NewContextAsync();
             var page = await context.NewPageAsync();
-            await page.GotoAsync("https://www.amazon.de/-/en/s?k=pc+netzteil&crid=VB0L1QCD2ESY&qid=1623326023&sprefix=pc+net%2Caps%2C174&ref=sr_pg_1");
+            await page.GotoAsync("https://www.amazon.de/b/?ie=UTF8&node=430177031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=E3X5BXZBEVWQ029HVY7H&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430177031_6");
 
-            var elements = await page.QuerySelectorAllAsync(
-                "//div[@class='s-include-content-margin s-border-bottom s-latency-cf-section']");
+            var nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+            var pageNumber = 0;
 
-            foreach (var element in elements)
+            while (nextPageBlock != null && pageNumber < _pagesToScrap)
             {
-                var product = new Product();
+                var elements = await page.QuerySelectorAllAsync(
+                    "//div[@class='s-include-content-margin s-border-bottom s-latency-cf-section']");
 
-
-                //Getting the name of the product
-                var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-medium a-color-base a-text-normal']");
-                if (nameBlock == null) continue;
-
-
-                var name = await nameBlock.TextContentAsync();
-                if (!string.IsNullOrEmpty(name))
+                foreach (var element in elements)
                 {
+                    var product = new Product();
+
+                    //Getting the name of the product
+                    var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-medium a-color-base a-text-normal']");
+                    if (nameBlock == null) continue;
+
+                    var name = await nameBlock.TextContentAsync();
+                    if (string.IsNullOrEmpty(name)) continue;
+
                     product.Name = name;
-                }
 
-                //Getting the image of the product if found
-                var image = "";
-                var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-fixed-height']");
-                if (imageBlock != null)
-                {
-                    var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
-                    if (img != null)
+                    //Getting the image of the product if found
+                    var image = "";
+                    var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-fixed-height']");
+                    if (imageBlock != null)
                     {
-                        image = await img.GetAttributeAsync("src");
+                        var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
+                        if (img != null)
+                        {
+                            image = await img.GetAttributeAsync("src");
+                        }
                     }
-                }
 
-                if (!string.IsNullOrEmpty(image))
-                {
                     product.Image = image;
+
+                    //Getting the Url to the product details page
+                    var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
+                    if (urlBLock == null) continue;
+
+                    var url = await urlBLock.GetAttributeAsync("href");
+
+                    if (string.IsNullOrEmpty(url)) continue;
+
+                    product.ProductUrl = BaseUrl_Amazon + url;
+
+                    //Getting the price of the product
+                    var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
+                    if (priceBlock == null) continue;
+
+                    var priceValue = await priceBlock.TextContentAsync();
+
+                    if (string.IsNullOrEmpty(priceValue)) continue;
+
+                    var culture = (CultureInfo) CultureInfo.CurrentCulture.Clone();
+                    if (!float.TryParse(priceValue, out var result)) continue;
+
+                    product.Price = result;
+
+                    product.Category = Category.CPU;
+
+                    product.Website = Website.Amazon;
+
+                    products.Add(product);
                 }
 
-                //Getting the Url to the product details page
-                var url = "";
-                var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
-                if(urlBLock == null) continue;
+                nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+                if (nextPageBlock != null)
+                    await nextPageBlock.ClickAsync();
+                pageNumber++;
 
-                url = await urlBLock.GetAttributeAsync("href");
-
-                if (!string.IsNullOrEmpty(url))
-                {
-                    product.ProductUrl = url;
-                }
-
-                //Getting the price of the product
-                var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
-                if(priceBlock == null) continue;
-
-                var priceValue = await priceBlock.TextContentAsync();
-
-                if (!string.IsNullOrEmpty(priceValue))
-                {
-                    var culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
-                    culture.NumberFormat.NumberDecimalSeparator = ".";
-                    product.Price = float.Parse(priceValue,culture);
-                }
-
-                product.Website = Website.Amazon;
-
-                products.Add(product);
+                Thread.Sleep(2500);
             }
 
             return products;
