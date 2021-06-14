@@ -5,20 +5,29 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Hangfire;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
+using PriceIt.Core.Interfaces;
+using PriceIt.Core.Services;
 
 namespace PriceIt.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IWebScraping _webScrapingService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IWebScraping webScrapingService)
         {
             _logger = logger;
+            _webScrapingService = webScrapingService;
         }
 
-        public IActionResult Index()
+        public async Task<ActionResult> Index()
         {
             return View();
         }

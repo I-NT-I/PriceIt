@@ -8,6 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PriceIt.Core.Interfaces;
+using PriceIt.Core.Services;
+using Hangfire;
+using Hangfire.SqlServer;
 
 namespace PriceIt
 {
@@ -24,6 +28,19 @@ namespace PriceIt
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.AddSingleton<IWebScraping, WebScraping>();
+
+            services.AddSingleton<IHttpCallManager, HttpCallManager>();
+
+            services.AddSingleton<ICSVStore,CSVStore>();
+
+            services.AddHangfire(options =>
+            {
+                options.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -45,6 +62,9 @@ namespace PriceIt
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseHangfireDashboard();
+            app.UseHangfireServer();
 
             app.UseEndpoints(endpoints =>
             {
