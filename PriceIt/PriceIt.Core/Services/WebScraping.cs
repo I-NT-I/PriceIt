@@ -75,7 +75,7 @@ namespace PriceIt.Core.Services
                         }
                     }
 
-                    product.Image = image;
+                    product.ProductImageUrl = image;
 
                     //Getting the Url to the product details page
                     var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
@@ -170,7 +170,7 @@ namespace PriceIt.Core.Services
                         }
                     }
 
-                    product.Image = image;
+                    product.ProductImageUrl = image;
 
                     //Getting the Url to the product details page
                     var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 iDDAGF ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");
@@ -289,7 +289,7 @@ namespace PriceIt.Core.Services
                         }
                     }
 
-                    product.Image = image;
+                product.ProductImageUrl = image;
 
                     //Getting the Url to the product details page
                     var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 dqwdXM ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");

@@ -8,8 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using PriceIt.Core.Interfaces;
 using PriceIt.Core.Services;
+using PriceIt.Data.DbContexts;
+using PriceIt.Data.Interfaces;
+using PriceIt.Data.Services;
 using Hangfire;
 using Hangfire.SqlServer;
 
@@ -34,6 +38,13 @@ namespace PriceIt
             services.AddSingleton<IHttpCallManager, HttpCallManager>();
 
             services.AddSingleton<ICSVStore,CSVStore>();
+
+            services.AddScoped<IProductsRepository, ProductsRepository>();
+
+            services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+            });
 
             services.AddHangfire(options =>
             {
