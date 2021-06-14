@@ -29,10 +29,6 @@ namespace PriceIt.Controllers
 
         public async Task<ActionResult> Index()
         {
-            //ViewData["test"] = await _webScrapingService.GetMediaMarktProducts();
-
-            RecurringJob.AddOrUpdate(() => _webScrapingService.GetMediaMarktProducts(),"30 05 * * *",TimeZoneInfo.Local);
-
             return View();
         }
 
