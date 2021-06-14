@@ -28,26 +28,7 @@ namespace PriceIt.Controllers
 
         public async Task<ActionResult> Index()
         {
-            var products = await _webScrapingService.test();
-
-            ViewData["test"] = await _webScrapingService.GetSaturnProducts();
-            return View(products);
-        }
-
-        public async Task<ActionResult> Form()
-        {
-
-            Request.Query.TryGetValue("field-keywords", out var captcha);
-            Request.Query.TryGetValue("amzn", out var amzn);
-            Request.Query.TryGetValue("amzn-r", out var amznr);
-
-            var doc = await _webScrapingService.HandelCaptcha(amzn.ToString(), amznr.ToString(), captcha.ToString());
-
-            if (doc != null)
-            {
-                ViewData["test"] = doc.Text;
-            }
-
+            ViewData["test"] = await _webScrapingService.GetMediaMarktProducts();
             return View();
         }
 
