@@ -32,23 +32,6 @@ namespace PriceIt.Controllers
             return View();
         }
 
-        public async Task<ActionResult> Form()
-        {
-
-            Request.Query.TryGetValue("field-keywords", out var captcha);
-            Request.Query.TryGetValue("amzn", out var amzn);
-            Request.Query.TryGetValue("amzn-r", out var amznr);
-
-            var doc = await _webScrapingService.HandelCaptcha(amzn.ToString(), amznr.ToString(), captcha.ToString());
-
-            if (doc != null)
-            {
-                ViewData["test"] = doc.Text;
-            }
-
-            return View();
-        }
-
         public IActionResult Privacy()
         {
             return View();

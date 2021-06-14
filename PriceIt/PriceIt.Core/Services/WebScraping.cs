@@ -7,11 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using HtmlAgilityPack;
 using Microsoft.Playwright;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Support.UI;
 using PriceIt.Core.Interfaces;
 using PriceIt.Core.Models;
 
@@ -357,56 +353,6 @@ namespace PriceIt.Core.Services
             await page.CloseAsync();
 
             return products;
-        }
-
-        public async Task<HtmlDocument> test()
-        {
-
-            var amazonPageOne = await _callManager.CallWebsite("de/search.html?query=computer%20netzteil&t=1621809809259&user_input=computer%20ne&query_from_suggest=true", "https://www.mediamarkt.de/");
-
-            var searchResultNumber = amazonPageOne.DocumentNode.Descendants("h1").Where(d =>
-                d.Attributes.Contains("class") && d.Attributes["class"].Value
-                    .Contains("Typostyled__StyledInfoTypo-sc-1jga2g7-0 csVJPs"));
-
-            var doc = new HtmlDocument();
-
-            doc.DocumentNode.AppendChild(searchResultNumber.FirstOrDefault());
-
-            return doc;
-        }
-
-        public async Task<HtmlDocument> HandelCaptcha(string amzn,string amznr, string captcha)
-        {
-            var uri = new Uri("https://www.amazon.de/errors/validateCaptcha", UriKind.Absolute);
-            var formVariables = new List<KeyValuePair<string, string>>();
-            formVariables.Add(new KeyValuePair<string, string>("amzn", amzn));
-            formVariables.Add(new KeyValuePair<string, string>("amzn-r", amznr));
-            formVariables.Add(new KeyValuePair<string, string>("field-keywords", captcha));
-
-            var formContent = new FormUrlEncodedContent(formVariables);
-            
-            var client = new HttpClient();
-
-            client.DefaultRequestHeaders.UserAgent.TryParseAdd("PriceItDevTest_2");
-
-            using (var message = new HttpRequestMessage { Method = HttpMethod.Get, RequestUri = uri, Content = formContent })
-            {
-                // use HttpClient to send the message
-                using (var postResponse = await client.SendAsync(message))
-                {
-                    if (postResponse.IsSuccessStatusCode)
-                    {
-                        var stringContent = await postResponse.Content.ReadAsStringAsync();
-
-                        var doc = new HtmlDocument();
-                        doc.LoadHtml(stringContent);
-
-                        return doc;
-                    }
-                }
-            }
-
-            return null;
         }
     }
 }
