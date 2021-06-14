@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using PriceIt.Core.Interfaces;
@@ -28,7 +29,10 @@ namespace PriceIt.Controllers
 
         public async Task<ActionResult> Index()
         {
-            ViewData["test"] = await _webScrapingService.GetMediaMarktProducts();
+            //ViewData["test"] = await _webScrapingService.GetMediaMarktProducts();
+
+            RecurringJob.AddOrUpdate(() => _webScrapingService.GetMediaMarktProducts(),"30 05 * * *",TimeZoneInfo.Local);
+
             return View();
         }
 

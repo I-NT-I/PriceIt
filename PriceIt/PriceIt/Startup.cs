@@ -10,6 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using PriceIt.Core.Interfaces;
 using PriceIt.Core.Services;
+using Hangfire;
+using Hangfire.SqlServer;
 
 namespace PriceIt
 {
@@ -33,6 +35,11 @@ namespace PriceIt
 
             services.AddSingleton<ICSVStore,CSVStore>();
 
+            services.AddHangfire(options =>
+            {
+                options.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"));
+            });
+
             services.AddMvc();
         }
 
@@ -55,6 +62,9 @@ namespace PriceIt
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseHangfireDashboard();
+            app.UseHangfireServer();
 
             app.UseEndpoints(endpoints =>
             {
