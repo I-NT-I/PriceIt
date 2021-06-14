@@ -21,6 +21,7 @@ namespace PriceIt.Core.Services
     {
         private const string BaseUrlAmazon = "https://www.amazon.de/";
         private const string BaseUrlMediaMarkt = "https://www.mediamarkt.de";
+        private const string BaseUrlSaturn = "https://www.saturn.de";
 
             private readonly int _pagesToScrap = 5;
 
@@ -137,7 +138,7 @@ namespace PriceIt.Core.Services
 
             await page.GotoAsync("https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page="+ pageNumber);
 
-            var loadMoreBlock = await page.QuerySelectorAsync("//button[@class='Buttonstyled__StyledButton-sc-140xkaw-1 kwAJfX ProductsListstyled__StyledButton-a3dwak-2 gNiSGg']");
+            var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
 
             while (loadMoreBlock != null && pageNumber <= _pagesToScrap)
             {
@@ -226,9 +227,11 @@ namespace PriceIt.Core.Services
 
                 pageNumber++;
 
-                await page.GotoAsync("https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page=" + pageNumber);
+                var nextPage = await page.GotoAsync("https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page=" + pageNumber);
 
-                loadMoreBlock = await page.QuerySelectorAsync("//button[@class='Buttonstyled__StyledButton-sc-140xkaw-1 kwAJfX ProductsListstyled__StyledButton-a3dwak-2 gNiSGg']");
+                if (nextPage == null || !nextPage.Ok) continue;
+
+                loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
 
                 Thread.Sleep(2500);
             }
@@ -240,103 +243,118 @@ namespace PriceIt.Core.Services
 
         public async Task<List<Product>> GetSaturnProducts()
         {
-
-            IWebDriver driver = new ChromeDriver(@"D:\WorkSpace\Git\PriceIt\PriceIt\PriceIt.Core\bin\Debug\netcoreapp3.1");
-            driver.Url = "https://www.saturn.de/de/search.html?query=computer%20netzteil&t=1623073505284&user_input=computer%20netzteil&query_from_suggest=true";
-
-            var wait = new WebDriverWait(driver, TimeSpan.FromMilliseconds(10000));
-
-            wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").Equals("complete"));
-
-            Thread.Sleep(5000);
-
-            ReadOnlyCollection<IWebElement> elements = driver.FindElements(
-                By.XPath("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']"));
-
-            var step = elements[0].Size.Height;
-            Int64 last_height = (Int64)0;
-            Int64 max_height = (Int64)((IJavaScriptExecutor)driver).ExecuteScript("return document.documentElement.scrollHeight");
-            while (true)
-            {
-                ((IJavaScriptExecutor)driver).ExecuteScript("window.scrollTo(0, " + last_height + ");");
-                /* Wait to load page */
-                Thread.Sleep(2000);
-                /* Calculate new scroll height and compare with last scroll height */
-                var new_height = last_height + step;
-                if (new_height >= max_height)
-                    /* If heights are the same it will exit the function */
-                    break;
-                last_height = new_height;
-            }
-
             var products = new List<Product>();
 
-            foreach (var element in elements)
+            using var playwright = await Playwright.CreateAsync();
+            var chromium = playwright.Chromium;
+            var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome", Headless = false });
+
+            var context = await browser.NewContextAsync();
+            var page = await context.NewPageAsync();
+
+            var pageNumber = 1;
+
+            await page.GotoAsync("https://www.saturn.de/de/category/_grafikkarten-286896.html?page=" + pageNumber);
+
+            var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
+
+            while (loadMoreBlock != null && pageNumber <= _pagesToScrap)
             {
-                var product = new Product();
+                var elements =
+                    await page.QuerySelectorAllAsync("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']");
 
-                var image = "";
-
-                try
+                foreach (var element in elements)
                 {
-                    var imageBlock =
-                        element.FindElement(
-                            By.XPath(".//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']"));
+                    var product = new Product();
 
-                    image = imageBlock.FindElement(By.TagName("img")).GetAttribute("src");
-                }
-                catch (Exception e)
-                {
-                    // ignored
-                }
+                    await element.ScrollIntoViewIfNeededAsync();
 
-                product.Image = image;
+                    //Getting the name of the product
+                    var nameBlock = await element.QuerySelectorAsync("//p[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 fuXjPV']");
+                    if (nameBlock == null) continue;
 
-                var nameBlockParent =
-                    element.FindElement(
-                        By.XPath(".//div[@class='ProductHeader__StyledHeadingWrapper-cwyxax-0 fGyNfx']"));
+                    var spanNameBlock = await element.QuerySelectorAsync("//span[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 kDlgid']");
+                    if (spanNameBlock == null) continue;
 
-                var nameBlock = nameBlockParent.FindElement(By.TagName("p"));
+                    var name = await spanNameBlock.TextContentAsync() + await nameBlock.TextContentAsync();
+                    if (string.IsNullOrEmpty(name)) continue;
 
-                var nameSpan = nameBlock.FindElement(By.TagName("span"));
-
-                var name = nameSpan.GetAttribute("innerText") + nameBlock.GetAttribute("innerText");
-
-                if (!string.IsNullOrEmpty(name))
-                {
                     product.Name = name;
+
+                    //Getting the image of the product if found
+                    var image = "";
+                    var imageBlock = await element.QuerySelectorAsync("//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']");
+                    if (imageBlock != null)
+                    {
+                        var img = await imageBlock.QuerySelectorAsync("//img");
+                        if (img != null)
+                        {
+                            image = await img.GetAttributeAsync("src");
+                        }
+                    }
+
+                    product.Image = image;
+
+                    //Getting the Url to the product details page
+                    var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 dqwdXM ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");
+                    if (urlBLock == null) continue;
+
+                    var url = await urlBLock.GetAttributeAsync("href");
+
+                    if (string.IsNullOrEmpty(url)) continue;
+
+                    product.ProductUrl = BaseUrlSaturn + url;
+
+                    var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
+                    if (priceBlock == null) continue;
+
+                    var priceSpans = await priceBlock.QuerySelectorAllAsync("//*");
+
+                    if (!priceSpans.Any()) continue;
+
+                    var priceEuro = await priceSpans[0].TextContentAsync();
+                    if (priceEuro == null) continue;
+
+                    priceEuro = priceEuro.Replace(".", "");
+                    if (!float.TryParse(priceEuro, out var euroResult)) continue;
+
+                    switch (priceSpans.Count)
+                    {
+                        case 2:
+                        {
+                            var priceCent = await priceSpans[1].TextContentAsync();
+                            if (priceCent == null) continue;
+
+                            if (!float.TryParse(priceCent, out var centResult)) continue;
+
+                            product.Price = euroResult + (centResult / 100);
+                            break;
+                        }
+                        case 1:
+                            product.Price = euroResult;
+                            break;
+                        default: continue;
+                    }
+
+                    product.Category = Category.GraphicCard;
+
+                    product.Website = Website.Saturn;
+
+                    products.Add(product);
                 }
 
-                var priceBlockParent =
-                    element.FindElement(
-                        By.XPath(".//span[@aria-hidden='true']"));
+                pageNumber++;
 
-                var priceSpans = priceBlockParent.FindElements(By.CssSelector("*"));
+                var nextPage = await page.GotoAsync("https://www.saturn.de/de/category/_grafikkarten-286896.html?page=" + pageNumber);
 
-                if (priceSpans != null)
-                {
-                    var priceBlockEuro = priceSpans[0];
+                if(nextPage == null || !nextPage.Ok) continue;
 
-                    var priceEuro = priceSpans[0].GetAttribute("innerText").Replace(".", "");
+                loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
 
-                    var priceCent = priceSpans[1].GetAttribute("innerText");
-
-                    product.Price = float.Parse(priceEuro) + (float.Parse(priceCent) / 100);
-                }
-
-                var linkBLock = element.FindElement(By.XPath(".//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 dqwdXM ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']"));
-
-                var link = linkBLock.GetAttribute("href");
-
-                if (!string.IsNullOrEmpty(link))
-                {
-                    product.ProductUrl = link;
-                }
-
-                product.Website = Website.MediaMarkt;
-
-                products.Add(product);
+                Thread.Sleep(2500);
             }
+
+            await page.CloseAsync();
 
             return products;
         }
