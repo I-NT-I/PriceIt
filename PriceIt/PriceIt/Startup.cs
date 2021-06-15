@@ -33,7 +33,7 @@ namespace PriceIt
         {
             services.AddControllersWithViews();
 
-            services.AddSingleton<IWebScraping, WebScraping>();
+            services.AddScoped<IWebScraping, WebScraping>();
 
             services.AddSingleton<IHttpCallManager, HttpCallManager>();
 

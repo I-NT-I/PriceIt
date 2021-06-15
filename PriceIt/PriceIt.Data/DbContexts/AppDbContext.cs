@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using PriceIt.Core.Models;
+using PriceIt.Data.Models;
 
 namespace PriceIt.Data.DbContexts
 {

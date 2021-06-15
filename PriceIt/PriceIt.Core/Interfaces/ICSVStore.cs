@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using PriceIt.Core.Models;
+﻿using System.Collections.Generic;
+using PriceIt.Data.Models;
 
 namespace PriceIt.Core.Interfaces
 {

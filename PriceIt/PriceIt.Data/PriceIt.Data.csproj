@@ -14,8 +14,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\PriceIt.Core\PriceIt.Core.csproj" />
-  </ItemGroup>
-
 </Project>
