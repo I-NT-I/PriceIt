@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using PriceIt.Core.Models;
 using PriceIt.Data.DbContexts;
 using PriceIt.Data.Interfaces;
@@ -17,9 +19,9 @@ namespace PriceIt.Data.Services
             _appDbContext = appDbContext ?? throw new ArgumentNullException(nameof(appDbContext));
         }
 
-        public IEnumerable<Product> GetProducts()
+        public async Task<List<Product>> GetProducts()
         {
-            return _appDbContext.Products.ToList();
+            return await _appDbContext.Products.ToListAsync();
         }
 
         public Product GetProduct(int id)
@@ -39,12 +41,30 @@ namespace PriceIt.Data.Services
                 throw new ArgumentNullException(nameof(product));
             }
 
-            _appDbContext.Products.Add(product);
+            var checkIfExists = _appDbContext.Products.FirstOrDefault(x => x.ProductUrl == product.ProductUrl);
+
+            if (checkIfExists == null)
+            {
+                _appDbContext.Products.Add(product);
+            }
         }
 
         public void UpdateProduct(Product product)
         {
-            //
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            var checkIfExists = _appDbContext.Products.FirstOrDefault(x => x.ProductUrl == product.ProductUrl);
+
+            if (checkIfExists == null)
+            {
+                throw new Exception("doesn't exists");
+            }
+
+            product.Id = checkIfExists.Id;
+            _appDbContext.Products.Update(product);
         }
 
         public void DeleteProduct(Product product)

@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using PriceIt.Core.Models;
 
 namespace PriceIt.Data.Interfaces
 {
     public interface IProductsRepository
     {
-        IEnumerable<Product> GetProducts();
+        Task<List<Product>> GetProducts();
         Product GetProduct(int id);
 
         void AddProduct(Product product);

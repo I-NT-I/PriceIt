@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using PriceIt.Core.Interfaces;
 using PriceIt.Core.Models;
@@ -19,7 +20,7 @@ namespace PriceIt.Core.Services
         private const string BaseUrlMediaMarkt = "https://www.mediamarkt.de";
         private const string BaseUrlSaturn = "https://www.saturn.de";
 
-            private readonly int _pagesToScrap = 5;
+            private readonly int _pagesToScrap = 2;
 
         private readonly IHttpCallManager _callManager;
         private readonly ICSVStore _csvStore;
@@ -39,8 +40,52 @@ namespace PriceIt.Core.Services
             var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome" ,Headless = false});
 
             var context = await browser.NewContextAsync();
+
+            //scraping amazon cpus
+            var cpus = await GetAmazonProductsFromCategory(context, Category.CPU,
+                "https://www.amazon.de/b/?ie=UTF8&node=430177031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=E3X5BXZBEVWQ029HVY7H&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430177031_6");
+
+            products.AddRange(cpus);
+
+            //scraping amazon rams
+            var rams = await GetAmazonProductsFromCategory(context, Category.RAM,
+                "https://www.amazon.de/b/?ie=UTF8&node=430178031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=EGZMRJ05ENZ3PS2T3PCJ&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430178031_5");
+
+            products.AddRange(rams);
+
+            //scraping amazon power supplies
+            var powerSupplies = await GetAmazonProductsFromCategory(context, Category.PowerSupply,
+                "https://www.amazon.de/b/?ie=UTF8&node=430176031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=V0TVRYQD99TQJJSA6Q5X&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430176031_4");
+
+            products.AddRange(powerSupplies);
+
+            //scraping amazon GPUs
+            var gpus = await GetAmazonProductsFromCategory(context, Category.GraphicCard,
+                "https://www.amazon.de/b/?ie=UTF8&node=430161031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=54VKGX4QWDDS37BA6J14&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430161031_3");
+
+            products.AddRange(gpus);
+
+            //scraping amazon Motherboards
+            var motherBoards = await GetAmazonProductsFromCategory(context, Category.MotherBoard,
+                "https://www.amazon.de/b/?ie=UTF8&node=430172031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=J340MH7BRRJ5FEABNEYG&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430172031_2");
+
+            products.AddRange(motherBoards);
+
+            //scraping amazon Storage
+            var storage = await GetAmazonProductsFromCategory(context, Category.Storge,
+                "https://www.amazon.de/b/?ie=UTF8&node=430168031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=9PQ81844TAW65ZWMWF7K&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430168031_1");
+
+            products.AddRange(storage);
+
+            return products;
+        }
+
+        private async Task<List<Product>> GetAmazonProductsFromCategory(IBrowserContext context, Category category, string categoryUrl)
+        {
+            var products = new List<Product>();
+
             var page = await context.NewPageAsync();
-            await page.GotoAsync("https://www.amazon.de/b/?ie=UTF8&node=430177031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=E3X5BXZBEVWQ029HVY7H&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430177031_6");
+            await page.GotoAsync(categoryUrl);
 
             var nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
             var pageNumber = 0;
@@ -94,12 +139,12 @@ namespace PriceIt.Core.Services
                     var priceValue = await priceBlock.TextContentAsync();
 
                     if (string.IsNullOrEmpty(priceValue)) continue;
-                    
+
                     if (!float.TryParse(priceValue, out var result)) continue;
 
                     product.Price = result;
 
-                    product.Category = Category.CPU;
+                    product.Category = category;
 
                     product.Website = Website.Amazon;
 

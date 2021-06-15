@@ -48,7 +48,10 @@ namespace PriceIt
 
             services.AddHangfire(options =>
             {
-                options.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"));
+                options.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"),new SqlServerStorageOptions()
+                {
+                    SlidingInvisibilityTimeout = TimeSpan.FromHours(1)
+                });
             });
 
             services.AddMvc();
