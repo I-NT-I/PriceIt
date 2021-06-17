@@ -15,6 +15,7 @@ using PriceIt.Core.Interfaces;
 using PriceIt.Core.Models;
 using PriceIt.Core.Services;
 using PriceIt.Data.Interfaces;
+using PriceIt.Data.Models;
 
 namespace PriceIt.Controllers
 {
@@ -35,7 +36,7 @@ namespace PriceIt.Controllers
         {
             //ViewData["test"] = await _webScrapingService.GetAmazonProducts();
 
-            RecurringJob.AddOrUpdate(() => _webScrapingService.GetAmazonProducts(), "30 05 * * *", TimeZoneInfo.Local);
+            RecurringJob.AddOrUpdate(() =>  _webScrapingService.GetAmazonProducts(), "30 05 * * *", TimeZoneInfo.Local);
 
             return View();
         }

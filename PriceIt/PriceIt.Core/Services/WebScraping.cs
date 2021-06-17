@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -22,7 +23,7 @@ namespace PriceIt.Core.Services
         private const string BaseUrlMediaMarkt = "https://www.mediamarkt.de";
         private const string BaseUrlSaturn = "https://www.saturn.de";
 
-        private readonly int _pagesToScrap = 10;
+        private readonly int _pagesToScrap = 2;
 
         private readonly IHttpCallManager _callManager;
         private readonly ICSVStore _csvStore;
@@ -54,7 +55,7 @@ namespace PriceIt.Core.Services
             {
                 foreach (var cpu in cpus)
                 {
-                    _productsRepository.AddProduct(cpu);
+                     _productsRepository.AddProduct(cpu);
                 }
 
                 if (!_productsRepository.Save())
@@ -76,7 +77,7 @@ namespace PriceIt.Core.Services
             {
                 foreach (var ram in rams)
                 {
-                    _productsRepository.AddProduct(ram);
+                     _productsRepository.AddProduct(ram);
                 }
 
                 if (!_productsRepository.Save())
@@ -88,7 +89,7 @@ namespace PriceIt.Core.Services
             }
 
             //scraping amazon power supplies
-            var powerSupplies = await GetAmazonProductsFromCategory(context, Category.PowerSupply,
+            var powerSupplies = await GetAmazonStorageProducts(context, Category.PowerSupply,
                 "https://www.amazon.de/b/?ie=UTF8&node=430176031&pf_rd_p=2460ece3-989d-411e-b2fb-3f40528cf506&pf_rd_r=V0TVRYQD99TQJJSA6Q5X&pf_rd_s=visualsn_de_pc-content-6&pf_rd_t=SubnavFlyout&ref_=sn_gfs_co_computervs_430176031_4");
 
             if (!powerSupplies.Any())
@@ -98,7 +99,7 @@ namespace PriceIt.Core.Services
             {
                 foreach (var powerSupply in powerSupplies)
                 {
-                    _productsRepository.AddProduct(powerSupply);
+                     _productsRepository.AddProduct(powerSupply);
                 }
 
                 if (!_productsRepository.Save())
@@ -120,7 +121,7 @@ namespace PriceIt.Core.Services
             {
                 foreach (var gpu in gpus)
                 {
-                    _productsRepository.AddProduct(gpu);
+                     _productsRepository.AddProduct(gpu);
                 }
 
                 if (!_productsRepository.Save())
@@ -142,7 +143,7 @@ namespace PriceIt.Core.Services
             {
                 foreach (var motherBoard in motherBoards)
                 {
-                    _productsRepository.AddProduct(motherBoard);
+                     _productsRepository.AddProduct(motherBoard);
                 }
 
                 if (!_productsRepository.Save())
@@ -164,7 +165,7 @@ namespace PriceIt.Core.Services
             {
                 foreach (var item in storage)
                 {
-                    _productsRepository.AddProduct(item);
+                     _productsRepository.AddProduct(item);
                 }
 
                 if (!_productsRepository.Save())
@@ -189,11 +190,14 @@ namespace PriceIt.Core.Services
             while (nextPageBlock != null && pageNumber < _pagesToScrap)
             {
                 var elements = await page.QuerySelectorAllAsync(
-                    "//div[@class='s-include-content-margin s-border-bottom s-latency-cf-section']");
+                    "//div[contains(concat(' ',normalize-space(@class),' '),'s-result-item s-asin')]");
 
                 foreach (var element in elements)
                 {
                     var product = new Product();
+
+                    //Getting ASIN
+                    product.ProductIdentifier = await element.GetAttributeAsync("data-asin");
 
                     //Getting the name of the product
                     var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-medium a-color-base a-text-normal']");
@@ -243,6 +247,99 @@ namespace PriceIt.Core.Services
                     product.Category = category;
 
                     product.Website = Website.Amazon;
+
+                    var now = DateTime.Now;
+                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
+
+                    products.Add(product);
+                }
+
+                nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+                if (nextPageBlock != null)
+                    await nextPageBlock.ClickAsync();
+                pageNumber++;
+
+                Thread.Sleep(2500);
+            }
+
+            await page.CloseAsync();
+
+            return products;
+        }
+
+        private async Task<List<Product>> GetAmazonStorageProducts(IBrowserContext context, Category category, string categoryUrl)
+        {
+            var products = new List<Product>();
+
+            var page = await context.NewPageAsync();
+            await page.GotoAsync(categoryUrl);
+
+            var nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+            var pageNumber = 0;
+
+            while (nextPageBlock != null && pageNumber < _pagesToScrap)
+            {
+                var elements = await page.QuerySelectorAllAsync(
+                    "//div[contains(concat(' ',normalize-space(@class),' '),'s-result-item s-asin')]");
+
+                foreach (var element in elements)
+                {
+                    var product = new Product();
+
+                    //Getting ASIN
+                    product.ProductIdentifier = await element.GetAttributeAsync("data-asin");
+
+                    //Getting the name of the product
+                    var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-base-plus a-color-base a-text-normal']");
+                    if (nameBlock == null) continue;
+
+                    var name = await nameBlock.TextContentAsync();
+                    if (string.IsNullOrEmpty(name)) continue;
+
+                    product.Name = name;
+
+                    //Getting the image of the product if found
+                    var image = "";
+                    var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-square-aspect']");
+                    if (imageBlock != null)
+                    {
+                        var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
+                        if (img != null)
+                        {
+                            image = await img.GetAttributeAsync("src");
+                        }
+                    }
+
+                    product.ProductImageUrl = image;
+
+                    //Getting the Url to the product details page
+                    var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
+                    if (urlBLock == null) continue;
+
+                    var url = await urlBLock.GetAttributeAsync("href");
+
+                    if (string.IsNullOrEmpty(url)) continue;
+
+                    product.ProductUrl = url;
+
+                    //Getting the price of the product
+                    var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
+                    if (priceBlock == null) continue;
+
+                    var priceValue = await priceBlock.TextContentAsync();
+
+                    if (string.IsNullOrEmpty(priceValue)) continue;
+
+                    if (!float.TryParse(priceValue, out var result)) continue;
+
+                    product.Price = result;
+
+                    product.Category = category;
+
+                    product.Website = Website.Amazon;
+
+                    var now = DateTime.Now;
+                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
 
                     products.Add(product);
                 }

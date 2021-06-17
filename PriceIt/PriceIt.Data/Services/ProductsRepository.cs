@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using PriceIt.Data.DbContexts;
@@ -41,11 +42,37 @@ namespace PriceIt.Data.Services
                 throw new ArgumentNullException(nameof(product));
             }
 
-            var checkIfExists = _appDbContext.Products.FirstOrDefault(x => x.ProductUrl == product.ProductUrl);
-
-            if (checkIfExists == null)
+            if (!string.IsNullOrEmpty(product.ProductIdentifier))
             {
-                _appDbContext.Products.Add(product);
+                var oldItem =
+                    _appDbContext.Products.FirstOrDefault(p => p.ProductIdentifier == product.ProductIdentifier);
+
+                if (oldItem == null)
+                {
+                    _appDbContext.Products.Add(product);
+                }
+                else
+                {
+                    _appDbContext.Entry(oldItem).State = EntityState.Detached;
+                    var entity = _appDbContext.Products.Attach(product);
+                    entity.State = EntityState.Modified;
+                }
+            }
+            else
+            {
+                var oldItem =
+                    _appDbContext.Products.FirstOrDefault(p => p.ProductUrl == product.ProductUrl);
+
+                if (oldItem == null)
+                {
+                    _appDbContext.Products.Add(product);
+                }
+                else
+                {
+                    _appDbContext.Entry(oldItem).State = EntityState.Detached;
+                    var entity = _appDbContext.Products.Attach(product);
+                    entity.State = EntityState.Modified;
+                }
             }
         }
 
@@ -56,15 +83,8 @@ namespace PriceIt.Data.Services
                 throw new ArgumentNullException(nameof(product));
             }
 
-            var checkIfExists = _appDbContext.Products.FirstOrDefault(x => x.ProductUrl == product.ProductUrl);
-
-            if (checkIfExists == null)
-            {
-                throw new Exception("doesn't exists");
-            }
-
-            product.Id = checkIfExists.Id;
-            _appDbContext.Products.Update(product);
+            var entity = _appDbContext.Products.Attach(product);
+            entity.State = EntityState.Modified;
         }
 
         public void DeleteProduct(Product product)
