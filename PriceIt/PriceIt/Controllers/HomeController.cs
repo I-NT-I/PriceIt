@@ -36,7 +36,7 @@ namespace PriceIt.Controllers
         {
             //ViewData["test"] = await _webScrapingService.GetAmazonProducts();
 
-            RecurringJob.AddOrUpdate(() =>  _webScrapingService.GetAmazonProducts(), "30 05 * * *", TimeZoneInfo.Local);
+            RecurringJob.AddOrUpdate(() => _webScrapingService.ScrapAllWebSites(), "* 05 * * *", TimeZoneInfo.Local);
 
             return View();
         }

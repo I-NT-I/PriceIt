@@ -36,6 +36,13 @@ namespace PriceIt.Core.Services
             _productsRepository = productsRepository;
         }
 
+        public async Task ScrapAllWebSites()
+        {
+            await GetAmazonProducts();
+            await GetMediaMarktProducts();
+            await GetSaturnProducts();
+        }
+
         public async Task GetAmazonProducts()
         {
             using var playwright = await Playwright.CreateAsync();
@@ -357,7 +364,7 @@ namespace PriceIt.Core.Services
             return products;
         }
 
-        public async Task<List<Product>> GetMediaMarktProducts()
+        public async Task GetMediaMarktProducts()
         {
             var products = new List<Product>();
 
@@ -366,11 +373,149 @@ namespace PriceIt.Core.Services
             var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome", Headless = false });
 
             var context = await browser.NewContextAsync();
+
+            //scraping MediaMarkt cpus
+            var cpus = await GetMediaMarktProductsFromCategory(context, Category.CPU,
+                "https://www.mediamarkt.de/de/category/_prozessoren-cpu-692537.html?page=");
+
+            if (!cpus.Any())
+                Console.WriteLine("Warning MediaMarkt - CPUS");
+
+            try
+            {
+                foreach (var cpu in cpus)
+                {
+                    _productsRepository.AddProduct(cpu);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning MediaMarkt - CPUS");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "MediaMarkt CPUS");
+            }
+
+            //scraping MediaMarkt rams
+            var rams = await GetMediaMarktProductsFromCategory(context, Category.RAM,
+                "https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page=");
+
+            if (!rams.Any())
+                Console.WriteLine("Warning MediaMarkt - RAMS");
+
+            try
+            {
+                foreach (var ram in rams)
+                {
+                    _productsRepository.AddProduct(ram);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning MediaMarkt - RAMS");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "MediaMarkt RAMS");
+            }
+
+            //scraping MediaMarkt power supplies
+            var powerSupplies = await GetMediaMarktProductsFromCategory(context, Category.PowerSupply,
+                "https://www.mediamarkt.de/de/search.html?query=pc%20power%20supply&page=");
+
+            if (!powerSupplies.Any())
+                Console.WriteLine("Warning MediaMarkt - POWERSUPPLIES");
+
+            try
+            {
+                foreach (var powerSupply in powerSupplies)
+                {
+                    _productsRepository.AddProduct(powerSupply);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning MediaMarkt - POWERSUPPLIES");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "MediaMarkt POWERSUPPLIES");
+            }
+
+            //scraping MediaMarkt GPUs
+            var gpus = await GetMediaMarktProductsFromCategory(context, Category.GraphicCard,
+                "https://www.mediamarkt.de/de/category/_grafikkarten-640610.html?page=");
+
+            if (!gpus.Any())
+                Console.WriteLine("Warning MediaMarkt - GPUS");
+
+            try
+            {
+                foreach (var gpu in gpus)
+                {
+                    _productsRepository.AddProduct(gpu);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning MediaMarkt - GPUS");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "MediaMarkt GPUS");
+            }
+
+            //scraping MediaMarkt Motherboards
+            var motherBoards = await GetMediaMarktProductsFromCategory(context, Category.MotherBoard,
+                "https://www.mediamarkt.de/de/category/_mainboards-691008.html?page=");
+
+            if (!motherBoards.Any())
+                Console.WriteLine("Warning MediaMarkt - MotherBoards");
+
+            try
+            {
+                foreach (var motherBoard in motherBoards)
+                {
+                    _productsRepository.AddProduct(motherBoard);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning MediaMarkt - MotherBoards");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "MediaMarkt MotherBoards");
+            }
+
+            //scraping MediaMarkt Storage
+            var storage = await GetMediaMarktProductsFromCategory(context, Category.Storge,
+                "https://www.mediamarkt.de/de/category/_festplatten-686016.html?page=");
+
+            if (!storage.Any())
+                Console.WriteLine("Warning MediaMarkt - Storage");
+
+            try
+            {
+                foreach (var item in storage)
+                {
+                    _productsRepository.AddProduct(item);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning MediaMarkt - Storage");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "MediaMarkt Storage");
+            }
+        }
+
+        private async Task<List<Product>> GetMediaMarktProductsFromCategory(IBrowserContext context, Category category, string categoryUrl)
+        {
+            var products = new List<Product>();
+
             var page = await context.NewPageAsync();
 
             var pageNumber = 1;
 
-            await page.GotoAsync("https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page=" + pageNumber);
+            await page.GotoAsync(categoryUrl + pageNumber);
 
             var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
 
@@ -452,16 +597,19 @@ namespace PriceIt.Core.Services
                         default: continue;
                     }
 
-                    product.Category = Category.RAM;
+                    product.Category = category;
 
                     product.Website = Website.MediaMarkt;
+
+                    var now = DateTime.Now;
+                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
 
                     products.Add(product);
                 }
 
                 pageNumber++;
 
-                var nextPage = await page.GotoAsync("https://www.mediamarkt.de/de/category/_arbeitsspeicher-ram-462907.html?page=" + pageNumber);
+                var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
 
                 if (nextPage == null || !nextPage.Ok) continue;
 
@@ -475,20 +623,156 @@ namespace PriceIt.Core.Services
             return products;
         }
 
-        public async Task<List<Product>> GetSaturnProducts()
+        public async Task GetSaturnProducts()
         {
-            var products = new List<Product>();
-
             using var playwright = await Playwright.CreateAsync();
             var chromium = playwright.Chromium;
             var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome", Headless = false });
 
             var context = await browser.NewContextAsync();
+
+            //scraping Saturn cpus
+            var cpus = await GetSaturnProducts(context, Category.CPU,
+                "https://www.saturn.de/de/category/_prozessoren-cpu-693063.html?page=");
+
+            if (!cpus.Any())
+                Console.WriteLine("Warning Saturn - CPUS");
+
+            try
+            {
+                foreach (var cpu in cpus)
+                {
+                    _productsRepository.AddProduct(cpu);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning Saturn - CPUS");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "Saturn CPUS");
+            }
+
+            //scraping Saturn rams
+            var rams = await GetSaturnProducts(context, Category.RAM,
+                "https://www.saturn.de/de/category/_arbeitsspeicher-286900.html?page=");
+
+            if (!rams.Any())
+                Console.WriteLine("Warning Saturn - RAMS");
+
+            try
+            {
+                foreach (var ram in rams)
+                {
+                    _productsRepository.AddProduct(ram);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning Saturn - RAMS");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "Saturn RAMS");
+            }
+
+            //scraping Saturn power supplies
+            var powerSupplies = await GetSaturnProducts(context, Category.PowerSupply,
+                "https://www.saturn.de/de/search.html?query=pc%20power%20supply&page=");
+
+            if (!powerSupplies.Any())
+                Console.WriteLine("Warning Saturn - POWERSUPPLIES");
+
+            try
+            {
+                foreach (var powerSupply in powerSupplies)
+                {
+                    _productsRepository.AddProduct(powerSupply);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning Saturn - POWERSUPPLIES");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "Saturn POWERSUPPLIES");
+            }
+
+            //scraping Saturn GPUs
+            var gpus = await GetSaturnProducts(context, Category.GraphicCard,
+                "https://www.saturn.de/de/category/_grafikkarten-286896.html?page=");
+
+            if (!gpus.Any())
+                Console.WriteLine("Warning Saturn - GPUS");
+
+            try
+            {
+                foreach (var gpu in gpus)
+                {
+                    _productsRepository.AddProduct(gpu);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning Saturn - GPUS");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "Saturn GPUS");
+            }
+
+            //scraping Saturn Motherboards
+            var motherBoards = await GetSaturnProducts(context, Category.MotherBoard,
+                "https://www.saturn.de/de/category/_mainboards-527446.html?page=");
+
+            if (!motherBoards.Any())
+                Console.WriteLine("Warning Saturn - MotherBoards");
+
+            try
+            {
+                foreach (var motherBoard in motherBoards)
+                {
+                    _productsRepository.AddProduct(motherBoard);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning Saturn - MotherBoards");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "Saturn MotherBoards");
+            }
+
+            //scraping Saturn Storage
+            var storage = await GetSaturnProducts(context, Category.Storge,
+                "https://www.saturn.de/de/category/_interne-festplatten-286924.html?page=");
+
+            if (!storage.Any())
+                Console.WriteLine("Warning Saturn - Storage");
+
+            try
+            {
+                foreach (var item in storage)
+                {
+                    _productsRepository.AddProduct(item);
+                }
+
+                if (!_productsRepository.Save())
+                    Console.WriteLine("Warning Saturn - Storage");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "Saturn Storage");
+            }
+        }
+
+        private async Task<List<Product>> GetSaturnProducts(IBrowserContext context,Category category,string categoryUrl)
+        {
+            var products = new List<Product>();
+
             var page = await context.NewPageAsync();
 
             var pageNumber = 1;
 
-            await page.GotoAsync("https://www.saturn.de/de/category/_grafikkarten-286896.html?page=" + pageNumber);
+            await page.GotoAsync(categoryUrl + pageNumber);
 
             var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
 
@@ -570,16 +854,19 @@ namespace PriceIt.Core.Services
                         default: continue;
                     }
 
-                    product.Category = Category.GraphicCard;
+                    product.Category = category;
 
                     product.Website = Website.Saturn;
+
+                    var now = DateTime.Now;
+                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
 
                     products.Add(product);
                 }
 
                 pageNumber++;
 
-                var nextPage = await page.GotoAsync("https://www.saturn.de/de/category/_grafikkarten-286896.html?page=" + pageNumber);
+                var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
 
                 if (nextPage == null || !nextPage.Ok) continue;
 

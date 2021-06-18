@@ -9,8 +9,9 @@ namespace PriceIt.Core.Interfaces
 {
     public interface IWebScraping
     {
+        Task ScrapAllWebSites();
         Task GetAmazonProducts();
-        Task<List<Product>> GetMediaMarktProducts();
-        Task<List<Product>> GetSaturnProducts();
+        Task GetMediaMarktProducts();
+        Task GetSaturnProducts();
     }
 }
