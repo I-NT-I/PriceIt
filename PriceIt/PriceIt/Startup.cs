@@ -16,6 +16,8 @@ using PriceIt.Data.Interfaces;
 using PriceIt.Data.Services;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Identity;
+using PriceIt.Data.Models;
 
 namespace PriceIt
 {
@@ -44,6 +46,22 @@ namespace PriceIt
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            services.AddIdentity<AppUser, IdentityRole>(config =>
+                {
+                    config.Password.RequiredLength = 4;
+                    config.Password.RequireDigit = false;
+                    config.Password.RequireUppercase = false;
+                    config.Password.RequireNonAlphanumeric = false;
+                })
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
+
+            services.ConfigureApplicationCookie(config =>
+            {
+                config.Cookie.Name = "PriceItCookie";
+                config.LoginPath = "/Home/Login";
             });
 
             services.AddHangfire(options =>
@@ -75,6 +93,7 @@ namespace PriceIt
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseHangfireDashboard();
