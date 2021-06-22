@@ -1,0 +1,17 @@
+﻿@using PriceIt.Data.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+<ul class="navbar-nav">
+    @if (SignInManager.IsSignedIn(User))
+    {
+    <li class="nav-item">
+        <form class="form-inline" action="/Home/Search" method="post">
+            <input class="nav-link text-dark" type="text" placeholder="search..." name="query" />
+            <button type="submit">search</button>
+        </form>
+        
+    </li>
+    }
+</ul>

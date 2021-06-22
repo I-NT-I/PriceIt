@@ -10,8 +10,10 @@ namespace PriceIt.Data.Interfaces
         Product GetProduct(int id);
 
         void AddProduct(Product product);
+        Task AddProductAsync(Product product);
         void UpdateProduct(Product product);
         void DeleteProduct(Product product);
+        Task<List<Product>> Search(string query);
 
         bool ProductExists(int id);
 

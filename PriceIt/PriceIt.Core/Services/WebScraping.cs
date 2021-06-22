@@ -45,7 +45,7 @@ namespace PriceIt.Core.Services
 
         public async Task GetAmazonProducts()
         {
-            using var playwright = await Playwright.CreateAsync();
+            var playwright = await Playwright.CreateAsync();
             var chromium = playwright.Chromium;
             var browser = await chromium.LaunchAsync(new BrowserTypeLaunchOptions { Channel = "chrome" ,Headless = false});
 
@@ -62,7 +62,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var cpu in cpus)
                 {
-                     _productsRepository.AddProduct(cpu);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(cpu);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -84,7 +91,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var ram in rams)
                 {
-                     _productsRepository.AddProduct(ram);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(ram);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -106,7 +120,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var powerSupply in powerSupplies)
                 {
-                     _productsRepository.AddProduct(powerSupply);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(powerSupply);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -128,7 +149,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var gpu in gpus)
                 {
-                     _productsRepository.AddProduct(gpu);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(gpu);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -150,7 +178,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var motherBoard in motherBoards)
                 {
-                     _productsRepository.AddProduct(motherBoard);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(motherBoard);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -172,7 +207,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var item in storage)
                 {
-                     _productsRepository.AddProduct(item);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(item);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -385,7 +427,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var cpu in cpus)
                 {
-                    _productsRepository.AddProduct(cpu);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(cpu);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -407,7 +456,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var ram in rams)
                 {
-                    _productsRepository.AddProduct(ram);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(ram);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -429,7 +485,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var powerSupply in powerSupplies)
                 {
-                    _productsRepository.AddProduct(powerSupply);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(powerSupply);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -451,7 +514,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var gpu in gpus)
                 {
-                    _productsRepository.AddProduct(gpu);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(gpu);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -473,7 +543,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var motherBoard in motherBoards)
                 {
-                    _productsRepository.AddProduct(motherBoard);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(motherBoard);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -495,7 +572,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var item in storage)
                 {
-                    _productsRepository.AddProduct(item);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(item);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -563,7 +647,7 @@ namespace PriceIt.Core.Services
 
                     if (string.IsNullOrEmpty(url)) continue;
 
-                    product.ProductUrl = BaseUrlMediaMarkt + url;
+                    product.ProductUrl = url;
 
                     //Getting the price of the product
                     var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
@@ -642,7 +726,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var cpu in cpus)
                 {
-                    _productsRepository.AddProduct(cpu);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(cpu);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -664,7 +755,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var ram in rams)
                 {
-                    _productsRepository.AddProduct(ram);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(ram);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -686,7 +784,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var powerSupply in powerSupplies)
                 {
-                    _productsRepository.AddProduct(powerSupply);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(powerSupply);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -708,7 +813,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var gpu in gpus)
                 {
-                    _productsRepository.AddProduct(gpu);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(gpu);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -730,7 +842,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var motherBoard in motherBoards)
                 {
-                    _productsRepository.AddProduct(motherBoard);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(motherBoard);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -752,7 +871,14 @@ namespace PriceIt.Core.Services
             {
                 foreach (var item in storage)
                 {
-                    _productsRepository.AddProduct(item);
+                    try
+                    {
+                        await _productsRepository.AddProductAsync(item);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
 
                 if (!_productsRepository.Save())
@@ -821,7 +947,7 @@ namespace PriceIt.Core.Services
 
                     if (string.IsNullOrEmpty(url)) continue;
 
-                    product.ProductUrl = BaseUrlSaturn + url;
+                    product.ProductUrl = url;
 
                     var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
                     if (priceBlock == null) continue;

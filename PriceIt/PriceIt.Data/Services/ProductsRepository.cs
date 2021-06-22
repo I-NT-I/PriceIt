@@ -76,6 +76,47 @@ namespace PriceIt.Data.Services
             }
         }
 
+        public async Task AddProductAsync(Product product)
+        {
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            if (!string.IsNullOrEmpty(product.ProductIdentifier))
+            {
+                var oldItem =
+                    await _appDbContext.Products.FirstOrDefaultAsync(p => p.ProductIdentifier == product.ProductIdentifier);
+
+                if (oldItem == null)
+                {
+                    await _appDbContext.Products.AddAsync(product);
+                }
+                else
+                {
+                    _appDbContext.Entry(oldItem).State = EntityState.Detached;
+                    var entity = _appDbContext.Products.Attach(product);
+                    entity.State = EntityState.Modified;
+                }
+            }
+            else
+            {
+                var oldItem =
+                    await _appDbContext.Products.FirstOrDefaultAsync(p => p.ProductUrl == product.ProductUrl);
+
+                if (oldItem == null)
+                {
+                    await _appDbContext.Products.AddAsync(product);
+                }
+                else
+                {
+                    _appDbContext.Entry(oldItem).State = EntityState.Detached;
+                    var entity = _appDbContext.Products.Attach(product);
+                    entity.State = EntityState.Modified;
+                }
+            }
+        }
+
         public void UpdateProduct(Product product)
         {
             if (product == null)
@@ -95,6 +136,18 @@ namespace PriceIt.Data.Services
             }
 
             _appDbContext.Products.Remove(product);
+        }
+
+        public async Task<List<Product>> Search(string query)
+        {
+            var products = new List<Product>();
+
+            if (!string.IsNullOrEmpty(query))
+            {
+                products = await _appDbContext.Products.Where(p => p.Name.Contains(query)).ToListAsync();
+            }
+
+            return products;
         }
 
         public bool ProductExists(int id)

@@ -108,6 +108,19 @@ namespace PriceIt.Controllers
             return RedirectToAction("Index");
         }
 
+        public IActionResult Search()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Search(string query)
+        {
+            var searchViewModel = new SearchResultViewModel {Products = await _productsRepository.Search(query)};
+
+            return View(searchViewModel);
+        }
+
         public IActionResult Privacy()
         {
             return View();
