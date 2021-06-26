@@ -609,97 +609,112 @@ namespace PriceIt.Core.Services
 
                 foreach (var element in elements)
                 {
-                    var product = new Product();
-
-                    await element.ScrollIntoViewIfNeededAsync();
-
-                    //Getting the name of the product
-                    var nameBlock = await element.QuerySelectorAsync("//p[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 fuXjPV']");
-                    if (nameBlock == null) continue;
-
-                    var spanNameBlock = await element.QuerySelectorAsync("//span[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 kPKTpQ']");
-                    if (spanNameBlock == null) continue;
-
-                    var name = await spanNameBlock.TextContentAsync() + await nameBlock.TextContentAsync();
-                    if (string.IsNullOrEmpty(name)) continue;
-
-                    product.Name = name;
-
-                    //Getting the image of the product if found
-                    var image = "";
-                    var imageBlock = await element.QuerySelectorAsync("//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']");
-                    if (imageBlock != null)
+                    try
                     {
-                        var img = await imageBlock.QuerySelectorAsync("//img");
-                        if (img != null)
+
+                        var product = new Product();
+
+                        await element.ScrollIntoViewIfNeededAsync();
+
+                        //Getting the name of the product
+                        var nameBlock = await element.QuerySelectorAsync("//p[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 fuXjPV']");
+                        if (nameBlock == null) continue;
+
+                        var spanNameBlock = await element.QuerySelectorAsync("//span[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 kPKTpQ']");
+                        if (spanNameBlock == null) continue;
+
+                        var name = await spanNameBlock.TextContentAsync() + await nameBlock.TextContentAsync();
+                        if (string.IsNullOrEmpty(name)) continue;
+
+                        product.Name = name;
+
+                        //Getting the image of the product if found
+                        var image = "";
+                        var imageBlock = await element.QuerySelectorAsync("//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']");
+                        if (imageBlock != null)
                         {
-                            image = await img.GetAttributeAsync("src");
-                        }
-                    }
-
-                    product.ProductImageUrl = image;
-
-                    //Getting the Url to the product details page
-                    var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 iDDAGF ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");
-                    if (urlBLock == null) continue;
-
-                    var url = await urlBLock.GetAttributeAsync("href");
-
-                    if (string.IsNullOrEmpty(url)) continue;
-
-                    product.ProductUrl = url;
-
-                    //Getting the price of the product
-                    var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
-                    if (priceBlock == null) continue;
-
-                    var priceSpans = await priceBlock.QuerySelectorAllAsync("//*");
-
-                    if (!priceSpans.Any()) continue;
-
-                    var priceEuro = await priceSpans[0].TextContentAsync();
-                    if (priceEuro == null) continue;
-
-                    priceEuro = priceEuro.Replace(".", "");
-                    if (!float.TryParse(priceEuro, out var euroResult)) continue;
-
-                    switch (priceSpans.Count)
-                    {
-                        case 2:
+                            var img = await imageBlock.QuerySelectorAsync("//img");
+                            if (img != null)
                             {
-                                var priceCent = await priceSpans[1].TextContentAsync();
-                                if (priceCent == null) continue;
-
-                                if (!float.TryParse(priceCent, out var centResult)) continue;
-
-                                product.Price = euroResult + (centResult / 100);
-                                break;
+                                image = await img.GetAttributeAsync("src");
                             }
-                        case 1:
-                            product.Price = euroResult;
-                            break;
-                        default: continue;
+                        }
+
+                        product.ProductImageUrl = image;
+
+                        //Getting the Url to the product details page
+                        var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 iDDAGF ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");
+                        if (urlBLock == null) continue;
+
+                        var url = await urlBLock.GetAttributeAsync("href");
+
+                        if (string.IsNullOrEmpty(url)) continue;
+
+                        product.ProductUrl = url;
+
+                        //Getting the price of the product
+                        var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
+                        if (priceBlock == null) continue;
+
+                        var priceSpans = await priceBlock.QuerySelectorAllAsync("//*");
+
+                        if (!priceSpans.Any()) continue;
+
+                        var priceEuro = await priceSpans[0].TextContentAsync();
+                        if (priceEuro == null) continue;
+
+                        priceEuro = priceEuro.Replace(".", "");
+                        if (!float.TryParse(priceEuro, out var euroResult)) continue;
+
+                        switch (priceSpans.Count)
+                        {
+                            case 2:
+                                {
+                                    var priceCent = await priceSpans[1].TextContentAsync();
+                                    if (priceCent == null) continue;
+
+                                    if (!float.TryParse(priceCent, out var centResult)) continue;
+
+                                    product.Price = euroResult + (centResult / 100);
+                                    break;
+                                }
+                            case 1:
+                                product.Price = euroResult;
+                                break;
+                            default: continue;
+                        }
+
+                        product.Category = category;
+
+                        product.Website = Website.MediaMarkt;
+
+                        var now = DateTime.Now;
+                        product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
+
+                        products.Add(product);
                     }
-
-                    product.Category = category;
-
-                    product.Website = Website.MediaMarkt;
-
-                    var now = DateTime.Now;
-                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-
-                    products.Add(product);
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
                 }
 
-                pageNumber++;
+                try
+                {
+                    pageNumber++;
 
-                var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
+                    var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
 
-                if (nextPage == null || !nextPage.Ok) continue;
+                    if (nextPage == null || !nextPage.Ok) continue;
 
-                loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
+                    loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
 
-                Thread.Sleep(2500);
+                    Thread.Sleep(2500);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
 
             await page.CloseAsync();
@@ -909,62 +924,64 @@ namespace PriceIt.Core.Services
 
                 foreach (var element in elements)
                 {
-                    var product = new Product();
-
-                    await element.ScrollIntoViewIfNeededAsync();
-
-                    //Getting the name of the product
-                    var nameBlock = await element.QuerySelectorAsync("//p[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 fuXjPV']");
-                    if (nameBlock == null) continue;
-
-                    var spanNameBlock = await element.QuerySelectorAsync("//span[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 kDlgid']");
-                    if (spanNameBlock == null) continue;
-
-                    var name = await spanNameBlock.TextContentAsync() + await nameBlock.TextContentAsync();
-                    if (string.IsNullOrEmpty(name)) continue;
-
-                    product.Name = name;
-
-                    //Getting the image of the product if found
-                    var image = "";
-                    var imageBlock = await element.QuerySelectorAsync("//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']");
-                    if (imageBlock != null)
+                    try
                     {
-                        var img = await imageBlock.QuerySelectorAsync("//img");
-                        if (img != null)
+                        var product = new Product();
+
+                        await element.ScrollIntoViewIfNeededAsync();
+
+                        //Getting the name of the product
+                        var nameBlock = await element.QuerySelectorAsync("//p[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 fuXjPV']");
+                        if (nameBlock == null) continue;
+
+                        var spanNameBlock = await element.QuerySelectorAsync("//span[@class='Typostyled__StyledInfoTypo-sc-1jga2g7-0 kDlgid']");
+                        if (spanNameBlock == null) continue;
+
+                        var name = await spanNameBlock.TextContentAsync() + await nameBlock.TextContentAsync();
+                        if (string.IsNullOrEmpty(name)) continue;
+
+                        product.Name = name;
+
+                        //Getting the image of the product if found
+                        var image = "";
+                        var imageBlock = await element.QuerySelectorAsync("//div[@class='Picturestyled__StyledPicture-sc-1s3zfhk-0 hwMBxB']");
+                        if (imageBlock != null)
                         {
-                            image = await img.GetAttributeAsync("src");
+                            var img = await imageBlock.QuerySelectorAsync("//img");
+                            if (img != null)
+                            {
+                                image = await img.GetAttributeAsync("src");
+                            }
                         }
-                    }
 
-                    product.ProductImageUrl = image;
+                        product.ProductImageUrl = image;
 
-                    //Getting the Url to the product details page
-                    var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 dqwdXM ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");
-                    if (urlBLock == null) continue;
+                        //Getting the Url to the product details page
+                        var urlBLock = await element.QuerySelectorAsync("//a[@class='Linkstyled__StyledLinkRouter-sc-1drhx1h-2 dqwdXM ProductListItemstyled__StyledLink-sc-16qx04k-0 dYJAjV']");
+                        if (urlBLock == null) continue;
 
-                    var url = await urlBLock.GetAttributeAsync("href");
+                        var url = await urlBLock.GetAttributeAsync("href");
 
-                    if (string.IsNullOrEmpty(url)) continue;
+                        if (string.IsNullOrEmpty(url)) continue;
 
-                    product.ProductUrl = url;
+                        product.ProductUrl = url;
 
-                    var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
-                    if (priceBlock == null) continue;
+                        var priceBlock = await element.QuerySelectorAsync("//span[@aria-hidden='true']");
+                        if (priceBlock == null) continue;
 
-                    var priceSpans = await priceBlock.QuerySelectorAllAsync("//*");
+                        var priceSpans = await priceBlock.QuerySelectorAllAsync("//*");
 
-                    if (!priceSpans.Any()) continue;
+                        if (!priceSpans.Any()) continue;
 
-                    var priceEuro = await priceSpans[0].TextContentAsync();
-                    if (priceEuro == null) continue;
+                        var priceEuro = await priceSpans[0].TextContentAsync();
+                        if (priceEuro == null) continue;
 
-                    priceEuro = priceEuro.Replace(".", "");
-                    if (!float.TryParse(priceEuro, out var euroResult)) continue;
+                        priceEuro = priceEuro.Replace(".", "");
+                        if (!float.TryParse(priceEuro, out var euroResult)) continue;
 
-                    switch (priceSpans.Count)
-                    {
-                        case 2:
+                        switch (priceSpans.Count)
+                        {
+                            case 2:
                             {
                                 var priceCent = await priceSpans[1].TextContentAsync();
                                 if (priceCent == null) continue;
@@ -974,31 +991,43 @@ namespace PriceIt.Core.Services
                                 product.Price = euroResult + (centResult / 100);
                                 break;
                             }
-                        case 1:
-                            product.Price = euroResult;
-                            break;
-                        default: continue;
+                            case 1:
+                                product.Price = euroResult;
+                                break;
+                            default: continue;
+                        }
+
+                        product.Category = category;
+
+                        product.Website = Website.Saturn;
+
+                        var now = DateTime.Now;
+                        product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
+
+                        products.Add(product);
                     }
-
-                    product.Category = category;
-
-                    product.Website = Website.Saturn;
-
-                    var now = DateTime.Now;
-                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-
-                    products.Add(product);
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
                 }
 
-                pageNumber++;
+                try
+                {
+                    pageNumber++;
 
-                var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
+                    var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
 
-                if (nextPage == null || !nextPage.Ok) continue;
+                    if (nextPage == null || !nextPage.Ok) continue;
 
-                loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
+                    loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
 
-                Thread.Sleep(2500);
+                    Thread.Sleep(2500);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
 
             await page.CloseAsync();

@@ -3,19 +3,12 @@ using Microsoft.Extensions.Logging;
 using PriceIt.Models;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Hangfire;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Primitives;
 using PriceIt.Core.Interfaces;
-using PriceIt.Core.Models;
-using PriceIt.Core.Services;
 using PriceIt.Data.Interfaces;
 using PriceIt.Data.Models;
 
@@ -108,15 +101,17 @@ namespace PriceIt.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize]
         public IActionResult Search()
         {
             return View();
         }
 
+        [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Search(string query)
+        public async Task<IActionResult> Search(string query, string website, List<string> categories)
         {
-            var searchViewModel = new SearchResultViewModel {Products = await _productsRepository.Search(query)};
+            var searchViewModel = new SearchResultViewModel {Query = query,Products = _productsRepository.Search(query,website, categories) };
 
             return View(searchViewModel);
         }

@@ -8,7 +8,7 @@ namespace PriceIt.Data.Models
     {
         public int UserListId { get; set; }
         public string Name { get; set; }
-        public virtual List<Product> Products { get; set; }
+        public virtual List<ListItem> ListItems { get; set; }
         public virtual AppUser User { get; set; }
         public string UserId { get; set; }
     }

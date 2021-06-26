@@ -9,6 +9,7 @@
     <PackageReference Include="Hangfire.AspNetCore" Version="1.7.23" />
     <PackageReference Include="Hangfire.Core" Version="1.7.23" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.7.23" />
+    <PackageReference Include="LinqKit" Version="1.1.24" />
     <PackageReference Include="Microsoft.Playwright" Version="1.12.1" />
   </ItemGroup>
 
@@ -20,6 +21,10 @@
     <Reference Include="Microsoft.Extensions.Logging.Abstractions">
       <HintPath>C:\Program Files\dotnet\packs\Microsoft.AspNetCore.App.Ref\3.1.10\ref\netcoreapp3.1\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Helpers\Extensions\" />
   </ItemGroup>
 
 </Project>
