@@ -1,0 +1,24 @@
+﻿@model IEnumerable<PriceIt.Data.Models.UserList>
+@{
+    ViewData["Title"] = "Lists Page";
+}
+
+<h3>Lists Page</h3>
+
+<div>
+    <div>
+        <div>Add a new List!</div>
+
+        <div>
+            <form action="/UserList/Add" method="post">
+                <input type="text" placeholder="list name" name="listname" value="" />
+                <button type="submit">add a list</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@foreach (var userList in Model)
+{
+    await Html.RenderPartialAsync("UserList/_UserListPartial", userList);
+}
