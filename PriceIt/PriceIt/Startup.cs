@@ -35,6 +35,8 @@ namespace PriceIt
         {
             services.AddControllersWithViews();
 
+            services.AddHttpContextAccessor();
+
             services.AddScoped<IWebScraping, WebScraping>();
 
             services.AddSingleton<IHttpCallManager, HttpCallManager>();
@@ -42,6 +44,8 @@ namespace PriceIt
             services.AddSingleton<ICSVStore,CSVStore>();
 
             services.AddScoped<IProductsRepository, ProductsRepository>();
+
+            services.AddScoped<IListRepository, ListRepository>();
 
             services.AddDbContext<AppDbContext>(options =>
             {
