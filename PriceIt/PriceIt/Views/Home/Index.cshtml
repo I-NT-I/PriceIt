@@ -13,11 +13,7 @@
             <div>
                 @foreach (var product in products)
                 {
-                    <a href="@product.ProductUrl">
-                        <h5>@product.Name</h5>
-                        <img src="@product.ProductImageUrl" alt="@product.Name"/>
-                    </a>
-                    <p>price : @product.Price</p>
+                    await Html.RenderPartialAsync("UserList/_ProductPreviewPartial",product);
                 }
             </div>
         }

@@ -98,6 +98,35 @@ namespace PriceIt.Data.Services
             return list.UserId == GetCurrentUser().Id;
         }
 
+        public bool AddProductToList(Product product, UserList list)
+        {
+            if (product == null) return false;
+
+            if (list == null) return false;
+
+            list.ListItems ??= new List<ListItem>();
+
+            var item = list.ListItems.FirstOrDefault(i => i.Product.ProductIdentifier == product.ProductIdentifier
+                                               || i.Product.ProductUrl == product.ProductUrl);
+
+            if (item != null)
+            {
+                item.Quantity++;
+            }
+            else
+            {
+                item = new ListItem()
+                {
+                    Product = product,
+                    Quantity = 1
+                };
+
+                _appDbContext.ListItems.Add(item);
+            }
+
+            return Save();
+        }
+
         public bool Save()
         {
             return (_appDbContext.SaveChanges() >= 0);

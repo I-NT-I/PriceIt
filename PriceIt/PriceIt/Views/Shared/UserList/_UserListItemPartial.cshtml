@@ -1,0 +1,12 @@
+﻿@model PriceIt.Data.Models.ListItem
+
+<div class="container">
+    <a href="@Model.Product.ProductUrl">
+        <h5>@Model.Product.Name</h5>
+        <img src="@Model.Product.ProductImageUrl" alt="@Model.Product.Name"/>
+    </a>
+    <p>price : @Model.Product.Price</p>
+    
+    <h4>@Model.Quantity</h4>
+
+</div>

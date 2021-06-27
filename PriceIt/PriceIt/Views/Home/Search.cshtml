@@ -1,10 +1,6 @@
 ﻿@using PriceIt.Data.Models
 @model SearchResultViewModel;
 
-@{
-    var query = ViewData["query"];
-}
-
 <h1>Search Page</h1>
 
 <div class="container">
@@ -43,39 +39,7 @@
             {
                 foreach (var product in Model.Products)
                 {
-                    <div>
-                        @if (product.Website == Website.Amazon)
-                        {
-                            var amazonHref = "https://www.amazon.de" + @product.ProductUrl;
-
-                            <a href="@amazonHref">
-                                <h5>@product.Name</h5>
-                                <img src="@product.ProductImageUrl" alt="@product.Name" />
-                            </a>
-                        }
-            
-                        @if (product.Website == Website.MediaMarkt)
-                        {
-                            var mediaMarktHref = "https://www.mediamarkt.de" + @product.ProductUrl;
-
-                            <a href="@mediaMarktHref">
-                                <h5>@product.Name</h5>
-                                <img src="@product.ProductImageUrl" alt="@product.Name" />
-                            </a>
-                        }
-            
-                        @if (product.Website == Website.Saturn)
-                        {
-                            var saturnHref = "https://www.saturn.de" + @product.ProductUrl;
-
-                            <a href="@saturnHref">
-                                <h5>@product.Name</h5>
-                                <img src="@product.ProductImageUrl" alt="@product.Name" />
-                            </a>
-                        }
-
-                        <p>price : @product.Price</p>
-                    </div>
+                    await Html.RenderPartialAsync("UserList/_ProductPreviewPartial", product);
                 }
             }
         </div>

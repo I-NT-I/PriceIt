@@ -16,6 +16,7 @@ namespace PriceIt.Data.Interfaces
         bool DeleteList(int id);
         bool UpdateList(UserList list);
         bool HasAccessList(int id);
+        bool AddProductToList(Product product, UserList listId);
         bool Save();
     }
 }

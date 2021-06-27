@@ -104,7 +104,13 @@ namespace PriceIt.Controllers
         [Authorize]
         public IActionResult Search()
         {
-            return View();
+            var searchViewModel = new SearchResultViewModel
+            {
+                Query = "",
+                Products = _productsRepository.Search("","",new List<string>())
+            };
+
+            return View(searchViewModel);
         }
 
         [Authorize]

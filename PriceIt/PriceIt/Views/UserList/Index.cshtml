@@ -18,7 +18,14 @@
     </div>
 </div>
 
-@foreach (var userList in Model)
+@if (Model != null)
 {
-    await Html.RenderPartialAsync("UserList/_UserListPartial", userList);
+    @foreach (var userList in Model)
+    {
+        await Html.RenderPartialAsync("UserList/_UserListPartial", userList);
+    }
+}
+else
+{
+    <p>No lists found, Create some!</p>
 }

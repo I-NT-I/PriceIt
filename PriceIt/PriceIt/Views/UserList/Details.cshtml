@@ -1,0 +1,19 @@
+﻿@model PriceIt.Data.Models.UserList
+
+<h3>@Model.Name</h3>
+
+<div>
+    @if (Model.ListItems != null && Model.ListItems.Any())
+    {
+        foreach (var item in Model.ListItems)
+        {
+            await Html.RenderPartialAsync("UserList/_UserListItemPartial", item);
+        }
+    }
+    else
+    {
+        <p>This list is empty</p>
+        <p>add some products</p>
+        <a asp-controller="Home" asp-action="Search" asp-route-query="">Add products!</a>
+    }
+</div>
