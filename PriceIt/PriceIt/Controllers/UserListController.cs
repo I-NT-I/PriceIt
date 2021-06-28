@@ -125,8 +125,11 @@ namespace PriceIt.Controllers
                 return NotFound();
 
             var list = _listRepository.GetUserListById(id);
-            if (list == null)
-                return RedirectToAction("Error");
+
+            foreach (var listItem in list.ListItems)
+            {
+                listItem.Product = _productsRepository.GetProduct(listItem.ProductId);
+            }
 
             return View(list);
         }
@@ -168,6 +171,36 @@ namespace PriceIt.Controllers
             if (!_listRepository.AddProductToList(product, list)) return BadRequest("Could not save!");
             
             return RedirectToAction("Index");
+        }
+
+        [Authorize]
+        [HttpPost]
+        public IActionResult IncreaseListItemCount(int listId, int itemId)
+        {
+            var list = _listRepository.GetUserListById(listId);
+
+            if (list == null)
+                return NotFound();
+
+            if (!_listRepository.IncreaseListItemCount(list, itemId))
+                return BadRequest("Failed to increase product quantity please try again");
+
+            return RedirectToAction("Details", new { id = listId});
+        }
+
+        [Authorize]
+        [HttpPost]
+        public IActionResult DecreaseListItemOrDelete(int listId, int itemId)
+        {
+            var list = _listRepository.GetUserListById(listId);
+
+            if (list == null)
+                return NotFound();
+
+            if (!_listRepository.DecreaseListItemOrDelete(list, itemId))
+                return BadRequest("Failed to decrease product quantity please try again");
+
+            return RedirectToAction("Details", new {id = listId});
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

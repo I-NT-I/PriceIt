@@ -38,7 +38,7 @@ namespace PriceIt.Data.Services
 
         public UserList GetUserListById(int id)
         {
-            return id <= 0 ? null : _appDbContext.UserLists.FirstOrDefault(l => l.UserListId == id);
+            return id <= 0 ? null : _appDbContext.UserLists.Where(l => l.UserListId == id).Include(l => l.ListItems).FirstOrDefault();
         }
 
         public async Task AddListAsync(string listname)
@@ -112,16 +112,58 @@ namespace PriceIt.Data.Services
             if (item != null)
             {
                 item.Quantity++;
+
+                var entity = _appDbContext.ListItems.Attach(item);
+                entity.State = EntityState.Modified;
             }
             else
             {
                 item = new ListItem()
                 {
                     Product = product,
-                    Quantity = 1
+                    Quantity = 1,
+                    UserList = list,
+                    UserListId = list.UserListId
                 };
 
                 _appDbContext.ListItems.Add(item);
+            }
+
+            return Save();
+        }
+
+        public bool IncreaseListItemCount(UserList list, int listItemId)
+        {
+            var item = list.ListItems.FirstOrDefault(i => i.ListItemId == listItemId);
+
+            if (item == null)
+                return false;
+
+            item.Quantity++;
+
+            var entity = _appDbContext.ListItems.Attach(item);
+            entity.State = EntityState.Modified;
+
+            return Save();
+        }
+
+        public bool DecreaseListItemOrDelete(UserList list, int listItemId)
+        {
+            var item = list.ListItems.FirstOrDefault(i => i.ListItemId == listItemId);
+
+            if (item == null)
+                return false;
+
+            if (item.Quantity > 1)
+            {
+                item.Quantity--;
+
+                var entity = _appDbContext.ListItems.Attach(item);
+                entity.State = EntityState.Modified;
+            }
+            else
+            {
+                _appDbContext.ListItems.Remove(item);
             }
 
             return Save();
