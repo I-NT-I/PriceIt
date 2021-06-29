@@ -204,6 +204,16 @@ namespace PriceIt.Data.Services
             return products;
         }
 
+        public List<Product> Search(string query, Category category)
+        {
+            var fuzzy = new FuzzySearch(query);
+
+            var products = _appDbContext.Products.AsEnumerable().Where(p =>
+                fuzzy.IsMatch(p.Name) && p.Category == category).ToList();
+
+            return products;
+        }
+
         public bool ProductExists(int id)
         {
             if (id < 1)

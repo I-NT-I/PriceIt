@@ -135,6 +135,31 @@ namespace PriceIt.Controllers
         }
 
         [Authorize]
+        public IActionResult DetailsWithSimilarProducts(int productId)
+        {
+            if (productId < 1)
+                return NotFound();
+
+            var product = _productsRepository.GetProduct(productId);
+
+            if (product == null)
+                return NotFound();
+
+            var similarProducts =
+                _productsRepository.Search(product.Name, product.Category);
+
+            similarProducts.Remove(product);
+
+            var viewModel = new DetailsWithSimilarProductsViewModel()
+            {
+                Product = product,
+                SimilarProducts = similarProducts ?? new List<Product>() 
+            };
+
+            return View(viewModel);
+        }
+
+        [Authorize]
         public IActionResult AddProductToList(int productId)
         {
             var user = _listRepository.GetCurrentUser();

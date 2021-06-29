@@ -1,0 +1,16 @@
+﻿@model DetailsWithSimilarProductsViewModel
+
+@if (Model?.Product != null)
+{
+    await Html.RenderPartialAsync("UserList/_ProductPreviewPartial", Model.Product);
+
+    if (Model.SimilarProducts.Any())
+    {
+        <p> Similar Products :</p>
+
+        foreach (var similarProduct in Model.SimilarProducts)
+        {
+            await Html.RenderPartialAsync("UserList/_ProductPreviewPartial", similarProduct);
+        }
+    }
+}
