@@ -1,12 +1,28 @@
 ﻿@model PriceIt.Data.Models.ListItem
 
-<div class="container">
-    <a href="@Model.Product.ProductUrl">
-        <h5>@Model.Product.Name</h5>
-        <img src="@Model.Product.ProductImageUrl" alt="@Model.Product.Name"/>
-    </a>
-    <p>price : @Model.Product.Price</p>
+@if (Model.Product != null)
+{
+    <div class="container">
+        <a href="@Model.Product.ProductUrl">
+            <h5>@Model.Product.Name</h5>
+            <img src="@Model.Product.ProductImageUrl" alt="@Model.Product.Name"/>
+        </a>
+        <p>price : @Model.Product.Price</p>
     
-    <h4>@Model.Quantity</h4>
-
-</div>
+        <h4>@Model.Quantity</h4>
+        
+        <div>
+            <form asp-controller="UserList" asp-action="IncreaseListItemCount">
+                <input type="hidden" name="listId" value="@Model.UserListId"/>
+                <input type="hidden" name="itemId" value="@Model.ListItemId"/>
+                <input type="submit" value="Add"/>
+            </form>
+            
+            <form asp-controller="UserList" asp-action="DecreaseListItemOrDelete">
+                <input type="hidden" name="listId" value="@Model.UserListId" />
+                <input type="hidden" name="itemId" value="@Model.ListItemId" />
+                <input type="submit" value="Remove" />
+            </form>
+        </div>
+    </div>
+}

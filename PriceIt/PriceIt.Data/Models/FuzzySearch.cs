@@ -9,6 +9,7 @@ namespace PriceIt.Data.Models
         private string _searchTerm;
         private string[] _searchTerms;
         private Regex _searchPattern;
+        private Regex _searchWordPattern;
 
         public FuzzySearch(string searchTerm)
         {
@@ -17,6 +18,7 @@ namespace PriceIt.Data.Models
                 _searchTerm = "";
                 _searchTerms = null;
                 _searchPattern = null;
+                _searchWordPattern = null;
             }
             else
             {
@@ -24,16 +26,22 @@ namespace PriceIt.Data.Models
                 _searchTerms = searchTerm.Split(new Char[] { ' ' });
                 _searchPattern = new Regex(
                     "(?i)(?=.*" + String.Join(")(?=.*", _searchTerms) + ")");
+                _searchWordPattern = new Regex(string.Join("|",_searchTerms));
             }
         }
 
         public bool IsMatch(string value)
         {
             // do the cheap stuff first
-            if (_searchTerm == value) return true;
-            if (value.Contains(_searchTerm)) return true;
+            if (_searchTerm == value) 
+                return true;
+            if (value.Contains(_searchTerm)) 
+                return true;
             // if the above don't return true, then do the more expensive stuff
-            if (_searchPattern.IsMatch(value)) return true;
+            if (_searchWordPattern.IsMatch(value)) 
+                return true;
+            if (_searchPattern.IsMatch(value)) 
+                return true;
             // etc.
 
             return false;

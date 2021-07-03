@@ -30,6 +30,7 @@
     <p>Last updated at: @Model.LastUpdate</p>
 
     <p>price : @Model.Price</p>
-    
+        
+    <a class="btn btn-outline-primary" asp-controller="UserList" asp-action="DetailsWithSimilarProducts" asp-route-productId="@Model.Id">Check Similar Products</a>
     <a class="btn btn-light" asp-controller="UserList" asp-action="AddProductToList" asp-route-productId="@Model.Id">Added to a list</a>
 </div>

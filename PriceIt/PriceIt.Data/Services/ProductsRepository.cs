@@ -30,12 +30,7 @@ namespace PriceIt.Data.Services
 
         public Product GetProduct(int id)
         {
-            if (id < 1)
-            {
-                throw new ArgumentNullException(nameof(id));
-            }
-
-            return _appDbContext.Products.FirstOrDefault(p => p.Id == id);
+            return id < 1 ? null : _appDbContext.Products.FirstOrDefault(p => p.Id == id);
         }
 
         public void AddProduct(Product product)
@@ -205,6 +200,16 @@ namespace PriceIt.Data.Services
                         fuzzy.IsMatch(p.Name)).ToList();
                 }
             }
+
+            return products;
+        }
+
+        public List<Product> Search(string query, Category category)
+        {
+            var fuzzy = new FuzzySearch(query);
+
+            var products = _appDbContext.Products.AsEnumerable().Where(p =>
+                fuzzy.IsMatch(p.Name) && p.Category == category).ToList();
 
             return products;
         }
