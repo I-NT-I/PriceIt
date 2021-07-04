@@ -106,8 +106,8 @@ namespace PriceIt.Data.Services
 
             list.ListItems ??= new List<ListItem>();
 
-            var item = list.ListItems.FirstOrDefault(i => i.Product.ProductIdentifier == product.ProductIdentifier
-                                               || i.Product.ProductUrl == product.ProductUrl);
+            var item = list.ListItems.FirstOrDefault(i => i.Product != null && (i.Product.ProductIdentifier == product.ProductIdentifier
+                || i.Product.ProductUrl == product.ProductUrl));
 
             if (item != null)
             {
