@@ -39,10 +39,6 @@ namespace PriceIt
 
             services.AddScoped<IWebScraping, WebScraping>();
 
-            services.AddSingleton<IHttpCallManager, HttpCallManager>();
-
-            services.AddSingleton<ICSVStore,CSVStore>();
-
             services.AddScoped<IProductsRepository, ProductsRepository>();
 
             services.AddScoped<IListRepository, ListRepository>();
@@ -52,13 +48,7 @@ namespace PriceIt
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            services.AddIdentity<AppUser, IdentityRole>(config =>
-                {
-                    config.Password.RequiredLength = 4;
-                    config.Password.RequireDigit = false;
-                    config.Password.RequireUppercase = false;
-                    config.Password.RequireNonAlphanumeric = false;
-                })
+            services.AddIdentity<AppUser, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
 

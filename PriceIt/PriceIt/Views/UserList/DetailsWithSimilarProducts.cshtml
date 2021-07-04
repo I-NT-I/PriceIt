@@ -2,11 +2,9 @@
 
 @if (Model?.Product != null)
 {
-    await Html.RenderPartialAsync("UserList/_ProductPreviewPartial", Model.Product);
-
     if (Model.SimilarProducts.Any())
     {
-        <p> Similar Products :</p>
+        <p> Similar Products to @Model.Product.Name: </p>
 
         foreach (var similarProduct in Model.SimilarProducts)
         {

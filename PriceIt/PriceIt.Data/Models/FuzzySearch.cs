@@ -54,7 +54,6 @@ namespace PriceIt.Data.Models
             if (_searchWordPattern.IsMatch(value)) 
                 return true;
 
-
             return false;
         }
 
