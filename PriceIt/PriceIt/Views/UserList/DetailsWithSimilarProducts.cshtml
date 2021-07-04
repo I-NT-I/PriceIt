@@ -1,0 +1,14 @@
+﻿@model DetailsWithSimilarProductsViewModel
+
+@if (Model?.Product != null)
+{
+    if (Model.SimilarProducts.Any())
+    {
+        <p> Similar Products to @Model.Product.Name: </p>
+
+        foreach (var similarProduct in Model.SimilarProducts)
+        {
+            await Html.RenderPartialAsync("UserList/_ProductPreviewPartial", similarProduct);
+        }
+    }
+}

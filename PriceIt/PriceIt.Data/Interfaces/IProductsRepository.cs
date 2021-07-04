@@ -15,6 +15,7 @@ namespace PriceIt.Data.Interfaces
         void DeleteProduct(Product product);
         Task<List<Product>> Search(string query);
         List<Product> Search(string query, string website, List<string> categories);
+        List<Product> Search(string query, Category category);
 
         bool ProductExists(int id);
 

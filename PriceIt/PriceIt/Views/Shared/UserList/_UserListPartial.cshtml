@@ -1,11 +1,12 @@
 ﻿@model PriceIt.Data.Models.UserList
 
 <div class="container">
-    <h2>@Model.Name</h2>
+    <a asp-controller="UserList" asp-action="Details" asp-route-id="@Model.UserListId">@Model.Name</a>
     
     <divs>
         <div>
-            <a class="btn btn-outline-danger" asp-controller="UserList" asp-action="Edit" asp-route-id="@Model.UserListId">Edit</a>
+            <a class="btn btn-outline-primary" asp-controller="UserList" asp-action="Details" asp-route-id="@Model.UserListId">Details</a>
+            <a class="btn btn-outline-primary" asp-controller="UserList" asp-action="Edit" asp-route-id="@Model.UserListId">Edit</a>
             <a class="btn btn-outline-danger" asp-controller="UserList" asp-action="Delete" asp-route-id="@Model.UserListId">Delete</a>
         </div>
     </divs>

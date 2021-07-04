@@ -4,10 +4,13 @@ using PriceIt.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using PriceIt.Core.Interfaces;
 using PriceIt.Data.Interfaces;
 using PriceIt.Data.Models;
@@ -43,55 +46,95 @@ namespace PriceIt.Controllers
 
         public IActionResult Login()
         {
-            return View();
+            var viewModel = new LoginViewModel();
+            return View(viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login(LoginViewModel viewModel)
         {
-            var user = await _userManager.FindByNameAsync(username);
-
-            if (user != null)
+            if (ModelState.IsValid)
             {
-                var signInResult = await _signInManager.PasswordSignInAsync(user, password,false,false);
+                var user = await _userManager.FindByNameAsync(viewModel.UserName);
 
-                if (signInResult.Succeeded)
+                if (user != null)
                 {
-                    return RedirectToAction("Index");
+                    var signInResult = await _signInManager.PasswordSignInAsync(user, viewModel.Password, false, false);
+
+                    if (signInResult.Succeeded)
+                    {
+                        return RedirectToAction("Index");
+                    }
+
+                    ModelState.AddModelError("UserName", "Username or password do not match!");
+                }
+                else
+                {
+                    ModelState.AddModelError("UserName", "Username or password do not match!");
                 }
             }
 
-            return RedirectToAction("Index");
+            return View(viewModel);
         }
 
         public IActionResult Register()
         {
-            return View();
+            var viewModel = new RegisterViewModel();
+            return View(viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register(string username, string email, string password)
+        public async Task<IActionResult> Register(RegisterViewModel viewModel)
         {
-            var user = new AppUser
+            if (ModelState.IsValid)
             {
-                UserName = username,
-                Email = email,
-                UserLists = new List<UserList>()
-            };
+                if (viewModel.Password != viewModel.PasswordCheck)
+                {
+                    ModelState.AddModelError("PasswordCheck","Passwords do not match!");
+                    return View(viewModel);
+                }
 
-            var result = await _userManager.CreateAsync(user,password);
+                try
+                {
+                    var email = new MailAddress(viewModel.Email);
+                }
+                catch (Exception e)
+                {
+                    ModelState.AddModelError("Email","Provide a correct Email address");
 
-            if (result.Succeeded)
-            {
-                var signInResult = await _signInManager.PasswordSignInAsync(user, password, false, false);
+                    return View(viewModel);
+                }
+
+                var user = new AppUser
+                {
+                    UserName = viewModel.UserName,
+                    Email = viewModel.Email,
+                    UserLists = new List<UserList>()
+                };
+
+                var result = await _userManager.CreateAsync(user, viewModel.Password);
 
                 if (result.Succeeded)
                 {
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Login");
+                }
+
+                if (result.Errors.Any(e => e.Code == "DuplicateUserName"))
+                {
+                    ModelState.AddModelError("UserName","Username already in use");
+                }
+
+                if (result.Errors.Any(e => e.Code == "PasswordRequiresNonAlphanumeric" || e.Code == "PasswordRequiresLower" || e.Code == "PasswordRequiresUpper"))
+                {
+                    ModelState.AddModelError("Password", "Password must contain: NonAlphanumeric, Lowercase, and Uppercase characters");
+                }
+                else if(result.Errors.Any())
+                {
+                    ModelState.AddModelError("UserName","could not register right now, please try again later");
                 }
             }
 
-            return RedirectToAction("Index");
+            return View(viewModel);
         }
 
         public async Task<IActionResult> LogOut()
@@ -104,7 +147,13 @@ namespace PriceIt.Controllers
         [Authorize]
         public IActionResult Search()
         {
-            return View();
+            var searchViewModel = new SearchResultViewModel
+            {
+                Query = "",
+                Products = _productsRepository.Search("","",new List<string>())
+            };
+
+            return View(searchViewModel);
         }
 
         [Authorize]

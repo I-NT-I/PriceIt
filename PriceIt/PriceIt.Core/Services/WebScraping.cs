@@ -25,14 +25,10 @@ namespace PriceIt.Core.Services
 
         private readonly int _pagesToScrap = 2;
 
-        private readonly IHttpCallManager _callManager;
-        private readonly ICSVStore _csvStore;
         private readonly IProductsRepository _productsRepository;
 
-        public WebScraping(IHttpCallManager callManager, ICSVStore csvStore, IProductsRepository productsRepository)
+        public WebScraping(IProductsRepository productsRepository)
         {
-            _callManager = callManager;
-            _csvStore = csvStore;
             _productsRepository = productsRepository;
         }
 
@@ -230,88 +226,95 @@ namespace PriceIt.Core.Services
         {
             var products = new List<Product>();
 
-            var page = await context.NewPageAsync();
-            await page.GotoAsync(categoryUrl);
-
-            var nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
-            var pageNumber = 0;
-
-            while (nextPageBlock != null && pageNumber < _pagesToScrap)
+            try
             {
-                var elements = await page.QuerySelectorAllAsync(
-                    "//div[contains(concat(' ',normalize-space(@class),' '),'s-result-item s-asin')]");
+                var page = await context.NewPageAsync();
+                await page.GotoAsync(categoryUrl);
 
-                foreach (var element in elements)
+                var nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+                var pageNumber = 0;
+
+                while (nextPageBlock != null && pageNumber < _pagesToScrap)
                 {
-                    var product = new Product();
+                    var elements = await page.QuerySelectorAllAsync(
+                        "//div[contains(concat(' ',normalize-space(@class),' '),'s-result-item s-asin')]");
 
-                    //Getting ASIN
-                    product.ProductIdentifier = await element.GetAttributeAsync("data-asin");
-
-                    //Getting the name of the product
-                    var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-medium a-color-base a-text-normal']");
-                    if (nameBlock == null) continue;
-
-                    var name = await nameBlock.TextContentAsync();
-                    if (string.IsNullOrEmpty(name)) continue;
-
-                    product.Name = name;
-
-                    //Getting the image of the product if found
-                    var image = "";
-                    var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-fixed-height']");
-                    if (imageBlock != null)
+                    foreach (var element in elements)
                     {
-                        var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
-                        if (img != null)
+                        var product = new Product();
+
+                        //Getting ASIN
+                        product.ProductIdentifier = await element.GetAttributeAsync("data-asin");
+
+                        //Getting the name of the product
+                        var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-medium a-color-base a-text-normal']");
+                        if (nameBlock == null) continue;
+
+                        var name = await nameBlock.TextContentAsync();
+                        if (string.IsNullOrEmpty(name)) continue;
+
+                        product.Name = name;
+
+                        //Getting the image of the product if found
+                        var image = "";
+                        var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-fixed-height']");
+                        if (imageBlock != null)
                         {
-                            image = await img.GetAttributeAsync("src");
+                            var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
+                            if (img != null)
+                            {
+                                image = await img.GetAttributeAsync("src");
+                            }
                         }
+
+                        product.ProductImageUrl = image;
+
+                        //Getting the Url to the product details page
+                        var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
+                        if (urlBLock == null) continue;
+
+                        var url = await urlBLock.GetAttributeAsync("href");
+
+                        if (string.IsNullOrEmpty(url)) continue;
+
+                        product.ProductUrl = url;
+
+                        //Getting the price of the product
+                        var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
+                        if (priceBlock == null) continue;
+
+                        var priceValue = await priceBlock.TextContentAsync();
+
+                        if (string.IsNullOrEmpty(priceValue)) continue;
+
+                        if (!float.TryParse(priceValue, out var result)) continue;
+
+                        product.Price = result;
+
+                        product.Category = category;
+
+                        product.Website = Website.Amazon;
+
+                        var now = DateTime.Now;
+                        product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
+
+                        products.Add(product);
                     }
 
-                    product.ProductImageUrl = image;
+                    nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+                    if (nextPageBlock != null)
+                        await nextPageBlock.ClickAsync();
+                    pageNumber++;
 
-                    //Getting the Url to the product details page
-                    var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
-                    if (urlBLock == null) continue;
-
-                    var url = await urlBLock.GetAttributeAsync("href");
-
-                    if (string.IsNullOrEmpty(url)) continue;
-
-                    product.ProductUrl = url;
-
-                    //Getting the price of the product
-                    var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
-                    if (priceBlock == null) continue;
-
-                    var priceValue = await priceBlock.TextContentAsync();
-
-                    if (string.IsNullOrEmpty(priceValue)) continue;
-
-                    if (!float.TryParse(priceValue, out var result)) continue;
-
-                    product.Price = result;
-
-                    product.Category = category;
-
-                    product.Website = Website.Amazon;
-
-                    var now = DateTime.Now;
-                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-
-                    products.Add(product);
+                    Thread.Sleep(2500);
                 }
 
-                nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
-                if (nextPageBlock != null)
-                    await nextPageBlock.ClickAsync();
-                pageNumber++;
-
-                Thread.Sleep(2500);
+                await page.CloseAsync();
             }
-
-            await page.CloseAsync();
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             return products;
         }
@@ -320,88 +323,95 @@ namespace PriceIt.Core.Services
         {
             var products = new List<Product>();
 
-            var page = await context.NewPageAsync();
-            await page.GotoAsync(categoryUrl);
-
-            var nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
-            var pageNumber = 0;
-
-            while (nextPageBlock != null && pageNumber < _pagesToScrap)
+            try
             {
-                var elements = await page.QuerySelectorAllAsync(
-                    "//div[contains(concat(' ',normalize-space(@class),' '),'s-result-item s-asin')]");
+                var page = await context.NewPageAsync();
+                await page.GotoAsync(categoryUrl);
 
-                foreach (var element in elements)
+                var nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+                var pageNumber = 0;
+
+                while (nextPageBlock != null && pageNumber < _pagesToScrap)
                 {
-                    var product = new Product();
+                    var elements = await page.QuerySelectorAllAsync(
+                        "//div[contains(concat(' ',normalize-space(@class),' '),'s-result-item s-asin')]");
 
-                    //Getting ASIN
-                    product.ProductIdentifier = await element.GetAttributeAsync("data-asin");
-
-                    //Getting the name of the product
-                    var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-base-plus a-color-base a-text-normal']");
-                    if (nameBlock == null) continue;
-
-                    var name = await nameBlock.TextContentAsync();
-                    if (string.IsNullOrEmpty(name)) continue;
-
-                    product.Name = name;
-
-                    //Getting the image of the product if found
-                    var image = "";
-                    var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-square-aspect']");
-                    if (imageBlock != null)
+                    foreach (var element in elements)
                     {
-                        var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
-                        if (img != null)
+                        var product = new Product();
+
+                        //Getting ASIN
+                        product.ProductIdentifier = await element.GetAttributeAsync("data-asin");
+
+                        //Getting the name of the product
+                        var nameBlock = await element.QuerySelectorAsync("//span[@class='a-size-base-plus a-color-base a-text-normal']");
+                        if (nameBlock == null) continue;
+
+                        var name = await nameBlock.TextContentAsync();
+                        if (string.IsNullOrEmpty(name)) continue;
+
+                        product.Name = name;
+
+                        //Getting the image of the product if found
+                        var image = "";
+                        var imageBlock = await element.QuerySelectorAsync("//div[@class='a-section aok-relative s-image-square-aspect']");
+                        if (imageBlock != null)
                         {
-                            image = await img.GetAttributeAsync("src");
+                            var img = await imageBlock.QuerySelectorAsync("//img[@class='s-image']");
+                            if (img != null)
+                            {
+                                image = await img.GetAttributeAsync("src");
+                            }
                         }
+
+                        product.ProductImageUrl = image;
+
+                        //Getting the Url to the product details page
+                        var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
+                        if (urlBLock == null) continue;
+
+                        var url = await urlBLock.GetAttributeAsync("href");
+
+                        if (string.IsNullOrEmpty(url)) continue;
+
+                        product.ProductUrl = url;
+
+                        //Getting the price of the product
+                        var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
+                        if (priceBlock == null) continue;
+
+                        var priceValue = await priceBlock.TextContentAsync();
+
+                        if (string.IsNullOrEmpty(priceValue)) continue;
+
+                        if (!float.TryParse(priceValue, out var result)) continue;
+
+                        product.Price = result;
+
+                        product.Category = category;
+
+                        product.Website = Website.Amazon;
+
+                        var now = DateTime.Now;
+                        product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
+
+                        products.Add(product);
                     }
 
-                    product.ProductImageUrl = image;
+                    nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
+                    if (nextPageBlock != null)
+                        await nextPageBlock.ClickAsync();
+                    pageNumber++;
 
-                    //Getting the Url to the product details page
-                    var urlBLock = await element.QuerySelectorAsync("//a[@class='a-link-normal s-no-outline']");
-                    if (urlBLock == null) continue;
-
-                    var url = await urlBLock.GetAttributeAsync("href");
-
-                    if (string.IsNullOrEmpty(url)) continue;
-
-                    product.ProductUrl = url;
-
-                    //Getting the price of the product
-                    var priceBlock = await element.QuerySelectorAsync("//span[@class='a-price-whole']");
-                    if (priceBlock == null) continue;
-
-                    var priceValue = await priceBlock.TextContentAsync();
-
-                    if (string.IsNullOrEmpty(priceValue)) continue;
-
-                    if (!float.TryParse(priceValue, out var result)) continue;
-
-                    product.Price = result;
-
-                    product.Category = category;
-
-                    product.Website = Website.Amazon;
-
-                    var now = DateTime.Now;
-                    product.LastUpdate = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-
-                    products.Add(product);
+                    Thread.Sleep(2500);
                 }
 
-                nextPageBlock = await page.QuerySelectorAsync("//li[@class='a-last']");
-                if (nextPageBlock != null)
-                    await nextPageBlock.ClickAsync();
-                pageNumber++;
-
-                Thread.Sleep(2500);
+                await page.CloseAsync();
             }
-
-            await page.CloseAsync();
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             return products;
         }
@@ -595,23 +605,22 @@ namespace PriceIt.Core.Services
         {
             var products = new List<Product>();
 
-            var page = await context.NewPageAsync();
-
-            var pageNumber = 1;
-
-            await page.GotoAsync(categoryUrl + pageNumber);
-
-            var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
-
-            while (loadMoreBlock != null && pageNumber <= _pagesToScrap)
+            try
             {
-                var elements = await page.QuerySelectorAllAsync("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']");
+                var page = await context.NewPageAsync();
 
-                foreach (var element in elements)
+                var pageNumber = 1;
+
+                await page.GotoAsync(categoryUrl + pageNumber);
+
+                var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
+
+                while (loadMoreBlock != null && pageNumber <= _pagesToScrap)
                 {
-                    try
-                    {
+                    var elements = await page.QuerySelectorAllAsync("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']");
 
+                    foreach (var element in elements)
+                    {
                         var product = new Product();
 
                         await element.ScrollIntoViewIfNeededAsync();
@@ -669,15 +678,15 @@ namespace PriceIt.Core.Services
                         switch (priceSpans.Count)
                         {
                             case 2:
-                                {
-                                    var priceCent = await priceSpans[1].TextContentAsync();
-                                    if (priceCent == null) continue;
+                            {
+                                var priceCent = await priceSpans[1].TextContentAsync();
+                                if (priceCent == null) continue;
 
-                                    if (!float.TryParse(priceCent, out var centResult)) continue;
+                                if (!float.TryParse(priceCent, out var centResult)) continue;
 
-                                    product.Price = euroResult + (centResult / 100);
-                                    break;
-                                }
+                                product.Price = euroResult + (centResult / 100);
+                                break;
+                            }
                             case 1:
                                 product.Price = euroResult;
                                 break;
@@ -693,14 +702,7 @@ namespace PriceIt.Core.Services
 
                         products.Add(product);
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                }
 
-                try
-                {
                     pageNumber++;
 
                     var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
@@ -711,13 +713,13 @@ namespace PriceIt.Core.Services
 
                     Thread.Sleep(2500);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
 
-            await page.CloseAsync();
+                await page.CloseAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             return products;
         }
@@ -909,22 +911,22 @@ namespace PriceIt.Core.Services
         {
             var products = new List<Product>();
 
-            var page = await context.NewPageAsync();
-
-            var pageNumber = 1;
-
-            await page.GotoAsync(categoryUrl + pageNumber);
-
-            var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
-
-            while (loadMoreBlock != null && pageNumber <= _pagesToScrap)
+            try
             {
-                var elements =
-                    await page.QuerySelectorAllAsync("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']");
+                var page = await context.NewPageAsync();
 
-                foreach (var element in elements)
+                var pageNumber = 1;
+
+                await page.GotoAsync(categoryUrl + pageNumber);
+
+                var loadMoreBlock = await page.QuerySelectorAsync("//button[@data-test='mms-search-srp-loadmore']");
+
+                while (loadMoreBlock != null && pageNumber <= _pagesToScrap)
                 {
-                    try
+                    var elements =
+                        await page.QuerySelectorAllAsync("//div[@class='ProductFlexBox__StyledListItem-nk9z2u-0 kzcilw']");
+
+                    foreach (var element in elements)
                     {
                         var product = new Product();
 
@@ -1006,14 +1008,7 @@ namespace PriceIt.Core.Services
 
                         products.Add(product);
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                }
 
-                try
-                {
                     pageNumber++;
 
                     var nextPage = await page.GotoAsync(categoryUrl + pageNumber);
@@ -1024,13 +1019,13 @@ namespace PriceIt.Core.Services
 
                     Thread.Sleep(2500);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
 
-            await page.CloseAsync();
+                await page.CloseAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             return products;
         }

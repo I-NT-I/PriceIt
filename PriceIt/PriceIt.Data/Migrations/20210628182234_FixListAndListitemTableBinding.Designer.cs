@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PriceIt.Data.DbContexts;
 
 namespace PriceIt.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210628182234_FixListAndListitemTableBinding")]
+    partial class FixListAndListitemTableBinding
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -222,7 +224,7 @@ namespace PriceIt.Data.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<int>("Quantity")
@@ -285,7 +287,7 @@ namespace PriceIt.Data.Migrations
                         {
                             Id = 1,
                             Category = 0,
-                            LastUpdate = new DateTime(2021, 6, 28, 21, 6, 9, 515, DateTimeKind.Local).AddTicks(8269),
+                            LastUpdate = new DateTime(2021, 6, 28, 20, 22, 31, 658, DateTimeKind.Local).AddTicks(2206),
                             Name = "TestProduct1",
                             Price = 60.99f,
                             ProductImageUrl = "https://assets.mmsrg.com/isr/166325/c1/-/ASSET_MMS_72715345/fee_786_587_png",
@@ -296,7 +298,7 @@ namespace PriceIt.Data.Migrations
                         {
                             Id = 2,
                             Category = 0,
-                            LastUpdate = new DateTime(2021, 6, 28, 21, 6, 9, 518, DateTimeKind.Local).AddTicks(7091),
+                            LastUpdate = new DateTime(2021, 6, 28, 20, 22, 31, 662, DateTimeKind.Local).AddTicks(3352),
                             Name = "TestProduct2",
                             Price = 60.99f,
                             ProductImageUrl = "https://assets.mmsrg.com/isr/166325/c1/-/ASSET_MMS_72796414/fee_786_587_png",
@@ -307,7 +309,7 @@ namespace PriceIt.Data.Migrations
                         {
                             Id = 3,
                             Category = 0,
-                            LastUpdate = new DateTime(2021, 6, 28, 21, 6, 9, 518, DateTimeKind.Local).AddTicks(7139),
+                            LastUpdate = new DateTime(2021, 6, 28, 20, 22, 31, 662, DateTimeKind.Local).AddTicks(3474),
                             Name = "TestProduct3",
                             Price = 60.99f,
                             ProductImageUrl = "https://assets.mmsrg.com/isr/166325/c1/-/pixelboxx-mss-80864028/fee_786_587_png",
@@ -391,9 +393,7 @@ namespace PriceIt.Data.Migrations
                 {
                     b.HasOne("PriceIt.Data.Models.Product", "Product")
                         .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ProductId");
 
                     b.HasOne("PriceIt.Data.Models.UserList", "UserList")
                         .WithMany("ListItems")

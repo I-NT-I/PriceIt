@@ -1,0 +1,13 @@
+﻿@model AddProductToListViewModel
+
+<div class="container">
+    <form asp-controller="UserList" asp-action="AddProductToListPost" asp-route-productId="@Model.ProductId">
+        @foreach (var item in Model.Lists)
+        {
+            <input type="radio" name="listId" value="@item.UserListId">
+            <label>@item.Name</label><br>
+        }
+        
+        <input type="submit" value="Add"/>
+    </form>
+</div>
