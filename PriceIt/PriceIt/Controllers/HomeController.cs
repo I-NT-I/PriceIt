@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using PriceIt.Core.Interfaces;
 using PriceIt.Data.Interfaces;
 using PriceIt.Data.Models;
@@ -121,6 +122,15 @@ namespace PriceIt.Controllers
                 if (result.Errors.Any(e => e.Code == "DuplicateUserName"))
                 {
                     ModelState.AddModelError("UserName","Username already in use");
+                }
+
+                if (result.Errors.Any(e => e.Code == "PasswordRequiresNonAlphanumeric" || e.Code == "PasswordRequiresLower" || e.Code == "PasswordRequiresUpper"))
+                {
+                    ModelState.AddModelError("Password", "Password must contain: NonAlphanumeric, Lowercase, and Uppercase characters");
+                }
+                else if(result.Errors.Any())
+                {
+                    ModelState.AddModelError("UserName","could not register right now, please try again later");
                 }
             }
 
