@@ -8,10 +8,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using PriceIt.Core.Interfaces;
 using PriceIt.Core.Services;
+using PriceIt.Data.DbContexts;
+using PriceIt.Data.Interfaces;
+using PriceIt.Data.Services;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Identity;
+using PriceIt.Data.Models;
 
 namespace PriceIt
 {
@@ -29,15 +35,35 @@ namespace PriceIt
         {
             services.AddControllersWithViews();
 
-            services.AddSingleton<IWebScraping, WebScraping>();
+            services.AddHttpContextAccessor();
 
-            services.AddSingleton<IHttpCallManager, HttpCallManager>();
+            services.AddScoped<IWebScraping, WebScraping>();
 
-            services.AddSingleton<ICSVStore,CSVStore>();
+            services.AddScoped<IProductsRepository, ProductsRepository>();
+
+            services.AddScoped<IListRepository, ListRepository>();
+
+            services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            services.AddIdentity<AppUser, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
+
+            services.ConfigureApplicationCookie(config =>
+            {
+                config.Cookie.Name = "PriceItCookie";
+                config.LoginPath = "/Home/Login";
+            });
 
             services.AddHangfire(options =>
             {
-                options.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"));
+                options.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"),new SqlServerStorageOptions()
+                {
+                    SlidingInvisibilityTimeout = TimeSpan.FromHours(1)
+                });
             });
 
             services.AddMvc();
@@ -61,6 +87,7 @@ namespace PriceIt
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseHangfireDashboard();

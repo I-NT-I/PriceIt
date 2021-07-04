@@ -1,0 +1,18 @@
+﻿@model PriceIt.Data.Models.UserList;
+@{
+    ViewData["Title"] = "Lists Page";
+}
+
+<h3>Lists Page</h3>
+
+<div>
+    <div>
+        <form asp-controller="UserList" asp-action="DeletePost" method="post" asp-route-id="@Model.UserListId">
+            <div>
+                <p>Are you sure that you want to delete this list "@Model.Name" ?</p>
+                <input type="submit" value="Delete"/>
+                <a class="btn btn-primary" asp-controller="UserList" asp-action="Index">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

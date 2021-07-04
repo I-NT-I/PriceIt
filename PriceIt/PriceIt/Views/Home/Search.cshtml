@@ -1,0 +1,49 @@
+﻿@using PriceIt.Data.Models
+@model SearchResultViewModel;
+
+<h1>Search Page</h1>
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <form action="/Home/Search" method="post">
+                <input type="text" placeholder="search..." name="query" value="@Model.Query" /><br />
+
+                <!-- Website Radio Buttons-->
+                @foreach (var value in Enum.GetValues(typeof(Website)))
+                {
+                    @Html.RadioButtonFor(m => m.Website, value)
+                    @Html.Label(value.ToString())
+                    <br>
+                }
+
+                <!-- Category Radio Buttons-->
+                <input type="checkbox" id="CPU" name="categories" value="@Category.CPU">
+                <label for="CPU">CPUs</label><br>
+                <input type="checkbox" id="RAM" name="categories" value="@Category.RAM">
+                <label for="RAM">RAM</label><br>
+                <input type="checkbox" id="GraphicCard" name="categories" value="@Category.GraphicCard">
+                <label for="GraphicCard">Graphic Cards</label><br>
+                <input type="checkbox" id="MotherBoard" name="categories" value="@Category.MotherBoard">
+                <label for="MotherBoard">MotherBoards</label><br>
+                <input type="checkbox" id="PowerSupply" name="categories" value="@Category.PowerSupply">
+                <label for="PowerSupply">PowerSupplies</label><br>
+                <input type="checkbox" id="Storge" name="categories" value="@Category.Storge">
+                <label for="Storge">Storge</label><br>
+
+                <input type="submit" value="Search" />
+            </form>
+        </div>
+        <div class="col">
+            @if (Model?.Products != null)
+            {
+                foreach (var product in Model.Products)
+                {
+                    await Html.RenderPartialAsync("UserList/_ProductPreviewPartial", product);
+                }
+            }
+        </div>
+    </div>
+</div>
+
+
