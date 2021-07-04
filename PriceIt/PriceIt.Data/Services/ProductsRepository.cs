@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using PriceIt.Data.DbContexts;
 using PriceIt.Data.Interfaces;
 using PriceIt.Data.Models;
@@ -150,7 +145,7 @@ namespace PriceIt.Data.Services
 
             if (!string.IsNullOrEmpty(query))
             {
-                var fuzzy = new FuzzySearch(query);
+                var fuzzy = new Fuzzy(query);
 
                 products = _appDbContext.Products.AsEnumerable().Where(p => fuzzy.IsMatch(p.Name)).ToList();
             }
@@ -162,7 +157,7 @@ namespace PriceIt.Data.Services
         {
             List<Product> products;
 
-            var fuzzy = new FuzzySearch(query);
+            var fuzzy = new Fuzzy(query);
 
             var categoriesTag = new List<Category>();
 
@@ -178,12 +173,12 @@ namespace PriceIt.Data.Services
             {
                 if (categoriesTag.Any())
                 {
-                    products = _appDbContext.Products.AsEnumerable().Where(p =>
+                    products = _appDbContext.Products?.AsEnumerable().Where(p =>
                         fuzzy.IsMatch(p.Name) && p.Website == websiteTag && categoriesTag.Contains(p.Category)).ToList();
                 }
                 else
                 {
-                    products = _appDbContext.Products.AsEnumerable().Where(p =>
+                    products = _appDbContext.Products?.AsEnumerable().Where(p =>
                         fuzzy.IsMatch(p.Name) && p.Website == websiteTag).ToList();
                 }
             }
@@ -191,12 +186,12 @@ namespace PriceIt.Data.Services
             {
                 if (categoriesTag.Any())
                 {
-                    products = _appDbContext.Products.AsEnumerable().Where(p =>
+                    products = _appDbContext.Products?.AsEnumerable().Where(p =>
                         fuzzy.IsMatch(p.Name) && categoriesTag.Contains(p.Category)).ToList();
                 }
                 else
                 {
-                    products = _appDbContext.Products.AsEnumerable().Where(p =>
+                    products = _appDbContext.Products?.AsEnumerable().Where(p =>
                         fuzzy.IsMatch(p.Name)).ToList();
                 }
             }
@@ -206,12 +201,25 @@ namespace PriceIt.Data.Services
 
         public List<Product> Search(string query, Category category)
         {
-            var fuzzy = new FuzzySearch(query);
+            var fuzzy = new Fuzzy(query);
 
-            var products = _appDbContext.Products.AsEnumerable().Where(p =>
-                fuzzy.IsMatch(p.Name) && p.Category == category).ToList();
+            var products = _appDbContext.Products.AsEnumerable().Where(p => 
+                p.Category == category).ToList();
 
-            return products;
+            var simList = new List<SimProduct>();
+
+            foreach (var product in products)
+            {
+                simList.Add(new SimProduct()
+                {
+                    SimValue = fuzzy.MatchRegexWord(product.Name),
+                    Product = product
+                });
+            }
+
+            simList = simList.OrderByDescending(s => s.SimValue).Take(10).ToList();
+
+            return simList.Select(simProduct => simProduct.Product).ToList();
         }
 
         public bool ProductExists(int id)
