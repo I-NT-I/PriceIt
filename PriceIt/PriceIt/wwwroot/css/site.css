@@ -7,7 +7,23 @@ html, body{
 header .navbar{
     background-color: rgba(32, 32, 32, 0) !important;
     z-index: 1;
+
 }
+#Group_2:hover{
+
+    animation: turn 3s;
+    animation-iteration-count: 2;
+    cursor: pointer;
+}
+#Group_2{
+    transition: ease-in-out 1s;
+
+    animation-iteration-count: 2;
+}
+@keyframes turn {
+    from {transform: rotateY(0deg);}
+    to {transform: rotateY(360deg);}
+  }
 .pb-3 .container .row .col div{
     border: 1px solid #ffffff;
     border-radius: 4px;
