@@ -9,6 +9,18 @@ header .navbar{
     z-index: 1;
 
 }
+.pb-3 .container form label{
+    color:white;
+    font-size:30px;
+}
+.pb-3 form .container .row label{
+    color:white;
+    margin-left:10px;
+    font-size:15px;
+    width:1px;
+height:20px;
+
+}
 #Group_2:hover{
 
     animation: turn 3s;
@@ -2667,9 +2679,7 @@ body {
 #Email {
     left: 54px;
     top: 209px;
-    position: absolute;
     overflow: visible;
-    width: 176px;
     white-space: nowrap;
     text-align: left;
     font-family: Segoe UI;

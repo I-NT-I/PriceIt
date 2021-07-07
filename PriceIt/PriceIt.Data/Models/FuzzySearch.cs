@@ -9,7 +9,6 @@ namespace PriceIt.Data.Models
     {
         private string _searchTerm;
         private string[] _searchTerms;
-        private Regex _searchPattern;
         private Regex _searchWordPattern;
 
         public Fuzzy(string searchTerm)
@@ -18,7 +17,6 @@ namespace PriceIt.Data.Models
             {
                 _searchTerm = "";
                 _searchTerms = null;
-                _searchPattern = null;
                 _searchWordPattern = null;
             }
             else
@@ -27,15 +25,13 @@ namespace PriceIt.Data.Models
 
                 _searchTerm = searchTerm;
                 _searchTerms = searchTerm.Split(new Char[] { ' ' });
-                _searchPattern = new Regex(
-                    "(?i)(?=.*" + String.Join(")(?=.*", _searchTerms) + ")");
                 
 
                 var newSearchTerms = new List<string>();
 
                 foreach (var s in _searchTerms)
                 {
-                    if(s.Length > 2)
+                    if (s.Length > 2)
                         newSearchTerms.Add(s);
                 }
 
