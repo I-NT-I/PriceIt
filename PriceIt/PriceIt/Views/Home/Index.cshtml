@@ -130,11 +130,9 @@
         <label for="active" class="close"></label>
         <div class="wrapper">
             <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/UserList/Index">MyList</a></li>
-                <li><a href="/Home/Search">Search</a></li>
-                <li><a href="/Home/Login">Login</a></li>
-                <li><a href="/Home/Register">Register</a></li>
+                <li><a asp-controller="Home" asp-action="Index">Home</a></li>
+                <li><a asp-controller="UserList" asp-action="Index">MyList</a></li>
+                <li><a asp-controller="Home" asp-action="Search">Search</a></li>
             </ul>
         </div>
 

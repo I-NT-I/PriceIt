@@ -41,6 +41,9 @@ namespace PriceIt.Data.Models
 
         public bool IsMatch(string value)
         {
+            if (_searchTerm == "")
+                return true;
+
             value = value.ToLower();
 
             if (_searchTerm == value) 
