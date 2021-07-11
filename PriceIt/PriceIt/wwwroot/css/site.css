@@ -1,4 +1,4 @@
-﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 html, body{
     background-color: rgba(32,32,32,1);
@@ -9,16 +9,47 @@ header .navbar{
     z-index: 1;
 
 }
+.pb-3 div p{
+    text-align: center;
+}
+
+.pb-3 p{
+    color: white;
+
+}
+.pb-3 .container a{
+    margin-bottom: 10px;
+}
+.container .pb-3 .container a h5{
+    margin-top: 10px;
+}
+.pb-3 p:first-child{
+    color: white;
+    font-size: 30px;
+    width: 100%;
+}
+.pb-3 .container a img{
+    margin-left: 50%;
+    transform: translateX(-50%);
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+body .container .pb-3 .container{
+    border: 1px solid #ffffff;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
 .pb-3 .container form label{
     color:white;
     font-size:30px;
 }
 .pb-3 form .container .row label{
     color:white;
-    margin-left:10px;
     font-size:15px;
     width:1px;
-height:20px;
+    height:20px;
+    position: absolute;
+    margin-left: 23px;
 
 }
 #Group_2:hover{
@@ -57,7 +88,7 @@ height:20px;
 .pb-3 .container .row .col div a {
 
     text-decoration: none;
-
+    margin-bottom: 10px;
 }
 .pb-3 .container .row .col div p{
     text-align: center;
@@ -91,6 +122,10 @@ label{
 }
 .container .row .col form input:first-child{
     margin:0 100%;
+
+}
+.pb-3 .container .row .col form input:last-child{
+    margin: 20px 100px;
 }
 .container .row .col form #Website{
 
@@ -100,11 +135,14 @@ label{
 #Website{
     margin-right: 5px;
 }
+.pb-3 .container .row .col .container .bnt-light{
+    margin-bottom: 30px;
+}
 .container .row .col form label:nth-last-of-type(7){
-    margin-right: 120px;
+    margin-right: 50px;
 }
 .container .row .col form label:nth-of-type(4),.container .row .col form label:nth-of-type(5),.container .row .col form label:nth-of-type(6),.container .row .col form label:nth-of-type(7),.container .row .col form label:nth-of-type(8),.container .row .col form label:nth-of-type(9){
-    margin-right: 20px;
+    margin-right: 37px;
     margin-bottom: 0px !important;
 }
 .container .row .col form label:nth-of-type(7){
@@ -114,8 +152,11 @@ label{
     margin-left: 60px;
     
 }
+.container .row .col form label:nth-of-type(8) {
+    margin-right: 63px;
+}
 .container .row .col form input:nth-of-type(2){
-    margin-left: 120px;
+    margin-left: 50px;
 }
 .container .row .col form input{
     margin-right: 10px;
@@ -125,12 +166,16 @@ label{
     color: white;
     margin-bottom: 10px;
 }
-.pb-3 .container{
+.pb-3 form .container .row input{
     border: 4px solid #ffffff;
     margin: 20px;
     padding: 10px;
-    background-color: rgba(255, 255, 255, 0.082);
+    /* background-color: rgba(255, 255, 255, 0.082) !important; */
     border-radius: 5px;
+    margin-top: 30px;
+}
+#Password{
+    background-color: transparent !important;
 }
 .form-inline .nav-link {
     border-radius: 7px;
@@ -2675,7 +2720,11 @@ body {
     font-size: 25px;
     color: rgba(255,255,255,1)
 }
-
+.container .row #Email{
+    color: black;
+    font-size: 30px;
+    font-family: 'Oswald', sans-serif;
+}
 #Email {
     left: 54px;
     top: 209px;
